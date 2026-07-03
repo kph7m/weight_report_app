@@ -1,0 +1,29 @@
+name: weight_report_app
+description: A Material 3 Android weight tracking app built with Flutter, Riverpod, and Isar.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  intl: ^0.20.2
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Isar generator 3.1.x is incompatible with build_runner 2.4.14+
+  # because of analyzer constraint resolution. Keep this capped until
+  # Isar generator supports newer analyzer/build_runner versions.
+  build_runner: 2.4.13
+  flutter_lints: ^5.0.0
+  isar_generator: ^3.1.0+1
+
+flutter:
+  uses-material-design: true
