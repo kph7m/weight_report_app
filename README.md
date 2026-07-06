@@ -13,6 +13,11 @@ Flutter（stable channel）のAndroid向け体重管理アプリです。
 - 目標75kgまでの進捗表示
 - GitHub ActionsによるAPKビルド
 
+## 必要環境
+
+- Flutter stable channel
+- Android SDK
+
 ## 開発
 
 ```bash
