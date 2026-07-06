@@ -20,3 +20,5 @@ flutter pub get
 flutter test
 flutter build apk --release
 ```
+
+Codex push test
