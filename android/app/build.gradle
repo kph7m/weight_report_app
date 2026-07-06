@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace 'com.example.weight_report_app'
+    namespace 'com.kph7m.weightreportapp'
     compileSdk flutter.compileSdkVersion
     ndkVersion '28.2.13676358'
 
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId 'com.example.weight_report_app'
+        applicationId 'com.kph7m.weightreportapp'
         minSdkVersion flutter.minSdkVersion
         targetSdk flutter.targetSdkVersion
         versionCode flutter.versionCode
