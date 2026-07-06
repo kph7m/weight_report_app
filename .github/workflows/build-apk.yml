@@ -30,14 +30,14 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build release APK
-        run: flutter build apk --release
+      - name: Build debug APK
+        run: flutter build apk --debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: weight-report-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
 
       - name: Write Firebase service account key
         env:
@@ -52,7 +52,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
         run: |
-          firebase appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
+          firebase appdistribution:distribute build/app/outputs/flutter-apk/app-debug.apk \
             --app "$FIREBASE_APP_ID" \
             --groups "testers" \
-            --release-notes "GitHub Actions release from $GITHUB_SHA"
+            --release-notes "GitHub Actions debug build from $GITHUB_SHA"
