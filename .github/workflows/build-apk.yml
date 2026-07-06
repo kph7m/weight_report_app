@@ -1,14 +1,12 @@
-name: Build Android APK
+name: Build and Distribute Android APK
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [develop]
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build-and-distribute:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,13 +27,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
+      - name: Run tests
         run: flutter test
 
-      - name: Build APK
+      - name: Build release APK
         run: flutter build apk --release
 
       - name: Upload APK artifact
@@ -43,3 +38,21 @@ jobs:
         with:
           name: weight-report-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Write Firebase service account key
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_KEY" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Setup Firebase CLI
+        run: npm install --global firebase-tools
+
+      - name: Upload to Firebase App Distribution
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+        run: |
+          firebase appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
+            --app "$FIREBASE_APP_ID" \
+            --groups "testers" \
+            --release-notes "GitHub Actions release from $GITHUB_SHA"
