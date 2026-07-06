@@ -24,3 +24,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+dependency_overrides:
+  isar_flutter_libs:
+    path: third_party/isar_flutter_libs
