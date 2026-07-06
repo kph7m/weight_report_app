@@ -7,12 +7,12 @@ part of 'weight_entry.dart';
 // **************************************************************************
 
 extension GetWeightEntryCollection on Isar {
-  IsarCollection<WeightEntry> get weightEntrys => this.collection();
+  IsarCollection<WeightEntry> get weightEntries => this.collection();
 }
 
 const WeightEntrySchema = CollectionSchema(
-  name: r'WeightEntry',
-  id: 7284509678243379641,
+  name: r'weight_entry',
+  id: 588015553941118652,
   properties: {
     r'createdAt': PropertySchema(
       id: 0,

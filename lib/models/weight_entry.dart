@@ -2,7 +2,8 @@ import 'package:isar/isar.dart';
 
 part 'weight_entry.g.dart';
 
-@collection
+@Collection(accessor: 'weightEntries')
+@Name('weight_entry')
 class WeightEntry {
   WeightEntry({
     this.id = Isar.autoIncrement,

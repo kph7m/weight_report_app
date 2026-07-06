@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -8,25 +10,61 @@ class WeightRepository {
 
   final Isar _isar;
 
+  static const _schemas = [WeightEntrySchema];
+
   static Future<WeightRepository> open() async {
     final directory = await getApplicationDocumentsDirectory();
-    final isar = await Isar.open(
-      [WeightEntrySchema],
-      directory: directory.path,
-      inspector: false,
-    );
+    final isar = await _openIsar(directory.path);
     return WeightRepository(isar);
+  }
+
+  static Future<Isar> _openIsar(String directoryPath) async {
+    try {
+      return await Isar.open(
+        _schemas,
+        directory: directoryPath,
+        inspector: false,
+      );
+    } on IsarError catch (error) {
+      if (!_isRecoverableSchemaError(error)) {
+        rethrow;
+      }
+
+      await _deleteDevelopmentDatabase(directoryPath);
+      return Isar.open(_schemas, directory: directoryPath, inspector: false);
+    }
+  }
+
+  static bool _isRecoverableSchemaError(IsarError error) {
+    final message = error.message.toLowerCase();
+    return message.contains('collection id is invalid') ||
+        message.contains('schema') ||
+        message.contains('migration');
+  }
+
+  static Future<void> _deleteDevelopmentDatabase(String directoryPath) async {
+    final directory = Directory(directoryPath);
+    if (!await directory.exists()) return;
+
+    await for (final entity in directory.list()) {
+      final name = entity.uri.pathSegments.last;
+      if (name == 'default.isar' ||
+          name == 'default.isar.lock' ||
+          name.startsWith('default.isar.')) {
+        await entity.delete(recursive: true);
+      }
+    }
   }
 
   Stream<List<WeightEntry>> watchEntries() async* {
     Future<List<WeightEntry>> readEntries() async {
-      final entries = await _isar.weightEntrys.where().findAll();
+      final entries = await _isar.weightEntries.where().findAll();
       entries.sort((a, b) => b.date.compareTo(a.date));
       return entries;
     }
 
     yield await readEntries();
-    await for (final _ in _isar.weightEntrys.watchLazy()) {
+    await for (final _ in _isar.weightEntries.watchLazy()) {
       yield await readEntries();
     }
   }
@@ -35,6 +73,6 @@ class WeightRepository {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final entry = WeightEntry(date: today, weightKg: weightKg, createdAt: now);
-    await _isar.writeTxn(() => _isar.weightEntrys.put(entry));
+    await _isar.writeTxn(() => _isar.weightEntries.put(entry));
   }
 }
