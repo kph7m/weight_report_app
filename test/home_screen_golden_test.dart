@@ -97,10 +97,23 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField), '30.0');
     await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(seconds: 1));
+    });
+    await tester.pump();
     expect(
       _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
       'assets/images/character_high_touch.png',
     );
+    final characterRenderImages = tester.renderObjectList<RenderImage>(
+      find.descendant(
+        of: find.byWidgetPredicate(
+          (widget) => widget is Image && widget.semanticLabel == '体重入力キャラクター',
+        ),
+        matching: find.byType(RawImage),
+      ),
+    );
+    expect(characterRenderImages.single.image, isNotNull);
     await expectLater(
       find.byType(HomeScreen),
       matchesGoldenFile('../docs/screenshots/home-screen-high-touch.png'),
