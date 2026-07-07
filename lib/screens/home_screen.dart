@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/weight_providers.dart';
@@ -15,23 +16,38 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _characterPointingInput =
       'assets/images/character_pointing_input.png';
+  static const _characterHighTouch = 'assets/images/character_high_touch.png';
   static const _cloudTop = 'assets/images/cloud_top.png';
   static const _cloudBottom = 'assets/images/cloud_bottom.png';
 
   final _controller = TextEditingController(text: '00.0');
   final _formKey = GlobalKey<FormState>();
   final _focusNode = FocusNode();
+  bool _isWeightInputComplete = false;
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_updateWeightInputState);
+    _updateWeightInputState();
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_updateWeightInputState);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _updateWeightInputState() {
+    final weight = double.tryParse(_controller.text);
+    final isComplete = weight != null && weight >= 30.0;
+    if (isComplete == _isWeightInputComplete) return;
+
+    setState(() {
+      _isWeightInputComplete = isComplete;
+    });
   }
 
   @override
@@ -49,7 +65,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   formKey: _formKey,
                   controller: _controller,
                   focusNode: _focusNode,
-                  characterAsset: _characterPointingInput,
+                  characterAsset: _isWeightInputComplete
+                      ? _characterHighTouch
+                      : _characterPointingInput,
                   cloudTopAsset: _cloudTop,
                   cloudBottomAsset: _cloudBottom,
                 ),
@@ -234,6 +252,7 @@ class _WeightDisplayCard extends StatelessWidget {
           focusNode: focusNode,
           textAlign: TextAlign.center,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: const [_WeightInputFormatter()],
           style: Theme.of(context).textTheme.displayLarge?.copyWith(
             color: const Color(0xFF202633),
             fontWeight: FontWeight.w800,
@@ -257,13 +276,40 @@ class _WeightDisplayCard extends StatelessWidget {
             focusedErrorBorder: inputBorder(colorScheme.error),
           ),
           validator: (value) {
-            final weight = double.tryParse(value ?? '');
-            if (weight == null || weight <= 0) return '有効な体重を入力してください';
+            final input = value ?? '';
+            final weight = double.tryParse(input);
+            if (weight == null) return '数値で入力してください';
+            if (!RegExp(r'^\d{1,3}(\.\d)?$').hasMatch(input)) {
+              return '小数点第1位まで入力してください';
+            }
+            if (weight > 999.9) return '999.9以下で入力してください';
+            if (weight <= 0) return '有効な体重を入力してください';
             return null;
           },
         ),
       ),
     );
+  }
+}
+
+class _WeightInputFormatter extends TextInputFormatter {
+  const _WeightInputFormatter();
+
+  static final _allowedPattern = RegExp(r'^(\d{0,3}|\d{1,3}\.\d?)$');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.isEmpty) return newValue;
+    if (!_allowedPattern.hasMatch(text)) return oldValue;
+
+    final weight = double.tryParse(text);
+    if (weight != null && weight > 999.9) return oldValue;
+
+    return newValue;
   }
 }
 

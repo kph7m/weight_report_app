@@ -9,9 +9,41 @@ import 'package:weight_report_app/screens/home_screen.dart';
 const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
   'assets/images/character_pointing_input.png',
+  'assets/images/character_high_touch.png',
   'assets/images/cloud_top.png',
   'assets/images/cloud_bottom.png',
 ];
+
+Future<void> _pumpHomeScreen(WidgetTester tester) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        weightEntriesProvider.overrideWith((ref) => Stream.value(const [])),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFEF5EA8)),
+          fontFamily: _fontFamily,
+          scaffoldBackgroundColor: const Color(0xFFFFF7FB),
+          useMaterial3: true,
+        ),
+        home: const HomeScreen(),
+      ),
+    ),
+  );
+  await tester.pump();
+}
+
+String? _assetNameForSemanticLabel(WidgetTester tester, String semanticLabel) {
+  final image = tester.widget<Image>(
+    find.byWidgetPredicate(
+      (widget) => widget is Image && widget.semanticLabel == semanticLabel,
+    ),
+  );
+  final provider = image.image;
+  return provider is AssetImage ? provider.assetName : null;
+}
 
 void main() {
   setUpAll(() async {
@@ -24,27 +56,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          weightEntriesProvider.overrideWith((ref) => Stream.value(const [])),
-        ],
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFFEF5EA8),
-            ),
-            fontFamily: _fontFamily,
-            scaffoldBackgroundColor: const Color(0xFFFFF7FB),
-            useMaterial3: true,
-          ),
-          home: const HomeScreen(),
-        ),
-      ),
-    );
-
-    await tester.pump();
+    await _pumpHomeScreen(tester);
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(seconds: 1));
     });
@@ -62,6 +74,64 @@ void main() {
       find.byType(HomeScreen),
       matchesGoldenFile('../docs/screenshots/home-screen.png'),
     );
+  });
+
+  testWidgets('shows high touch character after weight input reaches 30.0', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpHomeScreen(tester);
+    expect(
+      _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
+      'assets/images/character_pointing_input.png',
+    );
+
+    await tester.enterText(find.byType(TextFormField), '29.9');
+    await tester.pumpAndSettle();
+    expect(
+      _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
+      'assets/images/character_pointing_input.png',
+    );
+
+    await tester.enterText(find.byType(TextFormField), '30.0');
+    await tester.pumpAndSettle();
+    expect(
+      _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
+      'assets/images/character_high_touch.png',
+    );
+    await expectLater(
+      find.byType(HomeScreen),
+      matchesGoldenFile('../docs/screenshots/home-screen-high-touch.png'),
+    );
+  });
+
+  testWidgets('limits weight input to numeric values, one decimal, and 999.9', (
+    tester,
+  ) async {
+    await _pumpHomeScreen(tester);
+    final fieldFinder = find.byType(TextFormField);
+
+    await tester.enterText(fieldFinder, '123.4');
+    await tester.pump();
+    expect(find.widgetWithText(TextFormField, '123.4'), findsOneWidget);
+
+    await tester.enterText(fieldFinder, '123.45');
+    await tester.pump();
+    expect(find.widgetWithText(TextFormField, '123.4'), findsOneWidget);
+
+    await tester.enterText(fieldFinder, '1000');
+    await tester.pump();
+    expect(find.widgetWithText(TextFormField, '123.4'), findsOneWidget);
+
+    await tester.enterText(fieldFinder, 'abc');
+    await tester.pump();
+    expect(find.widgetWithText(TextFormField, '123.4'), findsOneWidget);
+
+    await tester.enterText(fieldFinder, '.5');
+    await tester.pump();
+    expect(find.widgetWithText(TextFormField, '123.4'), findsOneWidget);
   });
 }
 
