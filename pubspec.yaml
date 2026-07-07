@@ -26,6 +26,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+  fonts:
+    - family: Noto Sans JP
+      fonts:
+        - asset: assets/fonts/NotoSansJP-Regular.ttf
 
 dependency_overrides:
   isar_flutter_libs:
