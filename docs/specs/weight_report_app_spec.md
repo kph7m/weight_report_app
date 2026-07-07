@@ -24,7 +24,10 @@ Weight Report App は、Android 向けに体重を日次で記録し、履歴・
 ### ホーム画面
 
 - 今日の体重入力欄を表示する。
+- 入力前は、入力エリアを指差すキャラクター画像で入力位置を案内する。
 - 入力した体重を保存できる。
+- 保存後は、ハイタッチを求めるキャラクター画像と「ハイタッチ！」操作を表示する。
+- ハイタッチ後は、記録完了を祝うキャラクター画像と完了メッセージを表示する。
 - 保存済みの体重履歴を表示する。
 - 直近 7 日平均を表示する。
 - 目標 75kg までの進捗を表示する。
@@ -57,3 +60,6 @@ Weight Report App は、Android 向けに体重を日次で記録し、履歴・
 現在の登録済み素材:
 
 - `screen-animations/weight-entry-high-touch-flow.png`: 体重入力後にハイタッチを求め、タップ後に記録完了演出を表示する画面フロー案。
+- `screen-animations/characters/character-pointing-input.png`: 入力前に入力エリアを案内するキャラクター画像。
+- `screen-animations/characters/character-high-touch.png`: 入力後にハイタッチを求めるキャラクター画像。
+- `screen-animations/characters/character-celebration.png`: 記録完了後にお祝いするキャラクター画像。

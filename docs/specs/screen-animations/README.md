@@ -22,3 +22,6 @@ SSD（Spec-Driven Development）で参照する画面イメージ、画面遷移
 ## 登録済み素材
 
 - `weight-entry-high-touch-flow.png`: 入力前、入力後、ハイタッチ、記録完了までの画面フロー案。
+- `characters/character-pointing-input.png`: 入力前に入力エリアを案内するキャラクター画像。
+- `characters/character-high-touch.png`: 入力後にハイタッチを求めるキャラクター画像。
+- `characters/character-celebration.png`: 記録完了後にお祝いするキャラクター画像。
