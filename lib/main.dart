@@ -17,7 +17,8 @@ class WeightReportApp extends StatelessWidget {
       title: 'Weight Report',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFEF5EA8)),
+        scaffoldBackgroundColor: const Color(0xFFFFF7FB),
         useMaterial3: true,
       ),
       home: const HomeScreen(),

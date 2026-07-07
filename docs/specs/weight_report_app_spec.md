@@ -64,6 +64,7 @@ Weight Report App は、Android 向けに体重を日次で記録し、履歴・
 現在の登録済み素材:
 
 - `screen-animations/weight-entry-start-screen-reference.png`: アプリ起動時に表示する体重入力画面の参考画像。
+- `../screenshots/startup-weight-entry-screen.png`: 実装後にキャプチャしたアプリ起動時の体重入力画面。
 - `screen-animations/weight-entry-high-touch-flow.png`: 体重入力後にハイタッチを求め、タップ後に記録完了演出を表示する画面フロー案。
 - `screen-animations/characters/character-pointing-input.png`: 入力前に入力エリアを案内するキャラクター画像。
 - `screen-animations/characters/character-high-touch.png`: 入力後にハイタッチを求めるキャラクター画像。
