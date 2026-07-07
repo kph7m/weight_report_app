@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/weight_providers.dart';
-import 'report_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -35,20 +34,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    final repository = await ref.read(weightRepositoryProvider.future);
-    await repository.saveToday(double.parse(_controller.text));
-    _focusNode.unfocus();
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('体重を保存しました。レポートを表示します。')));
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const ReportScreen()));
-  }
-
   @override
   Widget build(BuildContext context) {
     final entriesAsync = ref.watch(weightEntriesProvider);
@@ -67,9 +52,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   characterAsset: _characterPointingInput,
                   cloudTopAsset: _cloudTop,
                   cloudBottomAsset: _cloudBottom,
-                  statusLabel: _statusLabel,
-                  helperText: _helperText,
-                  onSave: _save,
                 ),
               ),
             ],
@@ -81,10 +63,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  String get _statusLabel => '入力前';
-
-  String get _helperText => '今日の体重を入力してね';
 }
 
 class _WeightInputHero extends StatelessWidget {
@@ -95,9 +73,6 @@ class _WeightInputHero extends StatelessWidget {
     required this.characterAsset,
     required this.cloudTopAsset,
     required this.cloudBottomAsset,
-    required this.statusLabel,
-    required this.helperText,
-    required this.onSave,
   });
 
   final GlobalKey<FormState> formKey;
@@ -106,9 +81,6 @@ class _WeightInputHero extends StatelessWidget {
   final String characterAsset;
   final String cloudTopAsset;
   final String cloudBottomAsset;
-  final String statusLabel;
-  final String helperText;
-  final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
@@ -163,23 +135,6 @@ class _WeightInputHero extends StatelessWidget {
               excludeFromSemantics: true,
             ),
           ),
-          Positioned(
-            top: mediaQuery.padding.top + 18,
-            left: 24,
-            right: 24,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 240),
-              child: Text(
-                helperText,
-                key: ValueKey(helperText),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: const Color(0xFFD950A0),
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ),
           Padding(
             padding: EdgeInsets.fromLTRB(
               20,
@@ -193,34 +148,38 @@ class _WeightInputHero extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _StatusPill(label: statusLabel),
                   const Spacer(),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    child: Image.asset(
-                      characterAsset,
-                      key: ValueKey(characterAsset),
-                      height: 390,
-                      fit: BoxFit.contain,
-                      semanticLabel: helperText,
-                    ),
-                  ),
-                  Transform.translate(
-                    offset: const Offset(0, -6),
-                    child: _WeightDisplayCard(
-                      controller: controller,
-                      focusNode: focusNode,
-                      colorScheme: colorScheme,
-                      inputBorder: _inputBorder,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
                   SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: onSave,
-                      icon: const Icon(Icons.save),
-                      label: const Text('保存してレポートへ'),
+                    height: 560,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        Positioned(
+                          bottom: 112,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 280),
+                            child: Image.asset(
+                              characterAsset,
+                              key: ValueKey(characterAsset),
+                              height: 470,
+                              fit: BoxFit.contain,
+                              semanticLabel: '体重入力キャラクター',
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: _WeightDisplayCard(
+                            controller: controller,
+                            focusNode: focusNode,
+                            colorScheme: colorScheme,
+                            inputBorder: _inputBorder,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -302,39 +261,6 @@ class _WeightDisplayCard extends StatelessWidget {
             if (weight == null || weight <= 0) return '有効な体重を入力してください';
             return null;
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFEF5EA8),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFEF5EA8).withValues(alpha: 0.28),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
         ),
       ),
     );
