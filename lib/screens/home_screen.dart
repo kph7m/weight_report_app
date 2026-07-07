@@ -170,7 +170,7 @@ class _WeightInputHero extends StatelessWidget {
                         Positioned(
                           left: 0,
                           right: 0,
-                          bottom: 80,
+                          bottom: 60,
                           child: _WeightDisplayCard(
                             controller: controller,
                             focusNode: focusNode,
