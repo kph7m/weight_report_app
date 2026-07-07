@@ -15,6 +15,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _characterPointingInput =
       'assets/images/character_pointing_input.png';
+  static const _cloudTop = 'assets/images/cloud_top.png';
   static const _cloudBottom = 'assets/images/cloud_bottom.png';
 
   final _controller = TextEditingController(text: '00.0');
@@ -49,6 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   controller: _controller,
                   focusNode: _focusNode,
                   characterAsset: _characterPointingInput,
+                  cloudTopAsset: _cloudTop,
                   cloudBottomAsset: _cloudBottom,
                 ),
               ),
@@ -69,6 +71,7 @@ class _WeightInputHero extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.characterAsset,
+    required this.cloudTopAsset,
     required this.cloudBottomAsset,
   });
 
@@ -76,6 +79,7 @@ class _WeightInputHero extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final String characterAsset;
+  final String cloudTopAsset;
   final String cloudBottomAsset;
 
   @override
@@ -113,14 +117,11 @@ class _WeightInputHero extends StatelessWidget {
             top: 0,
             left: 0,
             right: 0,
-            child: Transform.flip(
-              flipY: true,
-              child: Image.asset(
-                cloudBottomAsset,
-                fit: BoxFit.fitWidth,
-                alignment: Alignment.topCenter,
-                excludeFromSemantics: true,
-              ),
+            child: Image.asset(
+              cloudTopAsset,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
+              excludeFromSemantics: true,
             ),
           ),
           Positioned(

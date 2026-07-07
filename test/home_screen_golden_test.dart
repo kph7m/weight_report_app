@@ -9,6 +9,7 @@ import 'package:weight_report_app/screens/home_screen.dart';
 const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
   'assets/images/character_pointing_input.png',
+  'assets/images/cloud_top.png',
   'assets/images/cloud_bottom.png',
 ];
 
