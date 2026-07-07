@@ -156,7 +156,7 @@ class _WeightInputHero extends StatelessWidget {
                       alignment: Alignment.bottomCenter,
                       children: [
                         Positioned(
-                          bottom: 56,
+                          bottom: -48,
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 280),
                             child: Image.asset(
