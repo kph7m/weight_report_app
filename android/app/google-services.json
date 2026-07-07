@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1078469909001",
+    "project_id": "weightreportapp-d71ff",
+    "storage_bucket": "weightreportapp-d71ff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1078469909001:android:f52700cfead786eea236d8",
+        "android_client_info": {
+          "package_name": "com.kph7m.weightreportapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFVWAdM_DGMKmpGD9syMlQzJDHCyIb2hE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
