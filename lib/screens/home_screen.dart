@@ -16,6 +16,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _characterPointingInput = 'assets/images/character_pointing_input.png';
   static const _characterHighTouch = 'assets/images/character_high_touch.png';
   static const _characterCelebration = 'assets/images/character_celebration.png';
+  static const _cloudTop = 'assets/images/cloud_top.png';
+  static const _cloudBottom = 'assets/images/cloud_bottom.png';
 
   final _controller = TextEditingController(text: '00.0');
   final _formKey = GlobalKey<FormState>();
@@ -94,6 +96,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 controller: _controller,
                 focusNode: _focusNode,
                 characterAsset: _characterAsset,
+                cloudTopAsset: _cloudTop,
+                cloudBottomAsset: _cloudBottom,
                 statusLabel: _statusLabel,
                 helperText: _helperText,
                 isHighTouchMode: _isHighTouchMode,
@@ -168,6 +172,8 @@ class _WeightInputHero extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.characterAsset,
+    required this.cloudTopAsset,
+    required this.cloudBottomAsset,
     required this.statusLabel,
     required this.helperText,
     required this.isHighTouchMode,
@@ -180,6 +186,8 @@ class _WeightInputHero extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final String characterAsset;
+  final String cloudTopAsset;
+  final String cloudBottomAsset;
   final String statusLabel;
   final String helperText;
   final bool isHighTouchMode;
@@ -198,98 +206,129 @@ class _WeightInputHero extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.18)),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(32),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFF1F8), Colors.white],
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFFF1F8), Colors.white],
+                ),
+              ),
+            ),
           ),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-        child: Form(
-          key: formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: _StatusPill(label: statusLabel),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                helperText,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: isHighTouchMode ? onHighTouch : null,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 280),
-                  child: Image.asset(
-                    characterAsset,
-                    key: ValueKey(characterAsset),
-                    height: 300,
-                    fit: BoxFit.contain,
-                    semanticLabel: helperText,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Image.asset(
+              cloudTopAsset,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
+              excludeFromSemantics: true,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Image.asset(
+              cloudBottomAsset,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.bottomCenter,
+              excludeFromSemantics: true,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: _StatusPill(label: statusLabel),
                   ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: controller,
-                focusNode: focusNode,
-                textAlign: TextAlign.center,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.5,
+                  const SizedBox(height: 10),
+                  Text(
+                    helperText,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: isHighTouchMode ? onHighTouch : null,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 280),
+                      child: Image.asset(
+                        characterAsset,
+                        key: ValueKey(characterAsset),
+                        height: 300,
+                        fit: BoxFit.contain,
+                        semanticLabel: helperText,
+                      ),
                     ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  suffixText: 'kg',
-                  suffixStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                  enabledBorder: _inputBorder(colorScheme.primary.withValues(alpha: 0.28)),
-                  focusedBorder: _inputBorder(colorScheme.primary),
-                  errorBorder: _inputBorder(colorScheme.error),
-                  focusedErrorBorder: _inputBorder(colorScheme.error),
-                ),
-                validator: (value) {
-                  final weight = double.tryParse(value ?? '');
-                  if (weight == null || weight <= 0) return '有効な体重を入力してください';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: isHighTouchMode ? onHighTouch : onSave,
-                icon: Icon(isHighTouchMode ? Icons.back_hand : Icons.save),
-                label: Text(isHighTouchMode ? 'ハイタッチ！' : '入力してハイタッチへ'),
-              ),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 240),
-                child: isCelebrating
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 14),
-                        child: Text(
-                          '記録完了！今日もおつかれさまです。',
-                          key: const ValueKey('celebration-message'),
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w800,
-                              ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    textAlign: TextAlign.center,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
                         ),
-                      )
-                    : const SizedBox.shrink(),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.9),
+                      suffixText: 'kg',
+                      suffixStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                      enabledBorder: _inputBorder(colorScheme.primary.withValues(alpha: 0.28)),
+                      focusedBorder: _inputBorder(colorScheme.primary),
+                      errorBorder: _inputBorder(colorScheme.error),
+                      focusedErrorBorder: _inputBorder(colorScheme.error),
+                    ),
+                    validator: (value) {
+                      final weight = double.tryParse(value ?? '');
+                      if (weight == null || weight <= 0) return '有効な体重を入力してください';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: isHighTouchMode ? onHighTouch : onSave,
+                    icon: Icon(isHighTouchMode ? Icons.back_hand : Icons.save),
+                    label: Text(isHighTouchMode ? 'ハイタッチ！' : '入力してハイタッチへ'),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 240),
+                    child: isCelebrating
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 14),
+                            child: Text(
+                              '記録完了！今日もおつかれさまです。',
+                              key: const ValueKey('celebration-message'),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
