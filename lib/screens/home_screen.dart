@@ -1,11 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../providers/weight_providers.dart';
+import 'report_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -17,9 +16,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _characterPointingInput =
       'assets/images/character_pointing_input.png';
-  static const _characterHighTouch = 'assets/images/character_high_touch.png';
-  static const _characterCelebration =
-      'assets/images/character_celebration.png';
   static const _cloudTop = 'assets/images/cloud_top.png';
   static const _cloudBottom = 'assets/images/cloud_bottom.png';
 
@@ -27,20 +23,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _focusNode = FocusNode();
 
-  var _isHighTouchMode = false;
-  var _isCelebrating = false;
-
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        setState(() {
-          _isHighTouchMode = false;
-          _isCelebrating = false;
-        });
-      }
-    });
   }
 
   @override
@@ -56,41 +41,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await repository.saveToday(double.parse(_controller.text));
     _focusNode.unfocus();
     if (!mounted) return;
-    setState(() {
-      _isHighTouchMode = true;
-      _isCelebrating = false;
-    });
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('体重を保存しました。ハイタッチして記録完了です！')));
-  }
-
-  void _celebrate() {
-    if (!_isHighTouchMode) return;
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _isCelebrating = true;
-      _isHighTouchMode = false;
-    });
+    ).showSnackBar(const SnackBar(content: Text('体重を保存しました。レポートを表示します。')));
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const ReportScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
     final entriesAsync = ref.watch(weightEntriesProvider);
-    final average = ref.watch(sevenDayAverageProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFD),
       body: entriesAsync.when(
-        data: (entries) {
-          final latest = entries.isNotEmpty ? entries.first.weightKg : null;
-          final remaining = latest == null
-              ? null
-              : (latest - targetWeightKg).clamp(0, double.infinity).toDouble();
-          final progress = latest == null
-              ? 0.0
-              : (targetWeightKg / latest).clamp(0.0, 1.0).toDouble();
-
+        data: (_) {
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
@@ -98,68 +64,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   formKey: _formKey,
                   controller: _controller,
                   focusNode: _focusNode,
-                  characterAsset: _characterAsset,
+                  characterAsset: _characterPointingInput,
                   cloudTopAsset: _cloudTop,
                   cloudBottomAsset: _cloudBottom,
                   statusLabel: _statusLabel,
                   helperText: _helperText,
-                  isHighTouchMode: _isHighTouchMode,
-                  isCelebrating: _isCelebrating,
                   onSave: _save,
-                  onHighTouch: _celebrate,
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                sliver: SliverList.list(
-                  children: [
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'サマリー',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              '直近7日平均: ${average?.toStringAsFixed(1) ?? '--'} kg',
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              '目標75kgまで: ${remaining?.toStringAsFixed(1) ?? '--'} kg',
-                            ),
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(value: progress),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '体重履歴一覧',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    if (entries.isEmpty)
-                      const Card(child: ListTile(title: Text('まだ記録がありません')))
-                    else
-                      ...entries.map(
-                        (entry) => Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.monitor_weight_outlined),
-                            title: Text(
-                              '${entry.weightKg.toStringAsFixed(1)} kg',
-                            ),
-                            subtitle: Text(
-                              DateFormat.yMMMd('ja').format(entry.date),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
                 ),
               ),
             ],
@@ -172,23 +82,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  String get _characterAsset {
-    if (_isCelebrating) return _characterCelebration;
-    if (_isHighTouchMode) return _characterHighTouch;
-    return _characterPointingInput;
-  }
+  String get _statusLabel => '入力前';
 
-  String get _statusLabel {
-    if (_isCelebrating) return '記録完了';
-    if (_isHighTouchMode) return '入力後';
-    return '入力前';
-  }
-
-  String get _helperText {
-    if (_isCelebrating) return 'エフェクトでお祝い！レポートを確認しよう';
-    if (_isHighTouchMode) return 'ハイタッチして記録完了！';
-    return '今日の体重を入力してね';
-  }
+  String get _helperText => '今日の体重を入力してね';
 }
 
 class _WeightInputHero extends StatelessWidget {
@@ -201,10 +97,7 @@ class _WeightInputHero extends StatelessWidget {
     required this.cloudBottomAsset,
     required this.statusLabel,
     required this.helperText,
-    required this.isHighTouchMode,
-    required this.isCelebrating,
     required this.onSave,
-    required this.onHighTouch,
   });
 
   final GlobalKey<FormState> formKey;
@@ -215,10 +108,7 @@ class _WeightInputHero extends StatelessWidget {
   final String cloudBottomAsset;
   final String statusLabel;
   final String helperText;
-  final bool isHighTouchMode;
-  final bool isCelebrating;
   final VoidCallback onSave;
-  final VoidCallback onHighTouch;
 
   @override
   Widget build(BuildContext context) {
@@ -280,8 +170,8 @@ class _WeightInputHero extends StatelessWidget {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 240),
               child: Text(
-                isCelebrating ? '記録完了！今日もおつかれさまです。' : helperText,
-                key: ValueKey(isCelebrating ? 'celebration-title' : helperText),
+                helperText,
+                key: ValueKey(helperText),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: const Color(0xFFD950A0),
@@ -305,17 +195,14 @@ class _WeightInputHero extends StatelessWidget {
                 children: [
                   _StatusPill(label: statusLabel),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: isHighTouchMode ? onHighTouch : null,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 280),
-                      child: Image.asset(
-                        characterAsset,
-                        key: ValueKey(characterAsset),
-                        height: 390,
-                        fit: BoxFit.contain,
-                        semanticLabel: helperText,
-                      ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 280),
+                    child: Image.asset(
+                      characterAsset,
+                      key: ValueKey(characterAsset),
+                      height: 390,
+                      fit: BoxFit.contain,
+                      semanticLabel: helperText,
                     ),
                   ),
                   Transform.translate(
@@ -331,30 +218,10 @@ class _WeightInputHero extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: isHighTouchMode ? onHighTouch : onSave,
-                      icon: Icon(
-                        isHighTouchMode ? Icons.back_hand : Icons.save,
-                      ),
-                      label: Text(isHighTouchMode ? 'ハイタッチ！' : '入力してハイタッチへ'),
+                      onPressed: onSave,
+                      icon: const Icon(Icons.save),
+                      label: const Text('保存してレポートへ'),
                     ),
-                  ),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 240),
-                    child: isCelebrating
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 14),
-                            child: Text(
-                              '記録完了！今日もおつかれさまです。',
-                              key: const ValueKey('celebration-message'),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: colorScheme.primary,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                            ),
-                          )
-                        : const SizedBox.shrink(),
                   ),
                 ],
               ),
