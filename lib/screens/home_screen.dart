@@ -24,12 +24,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _focusNode = FocusNode();
   bool _isWeightInputComplete = false;
+  bool _didPrecacheImages = false;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_updateWeightInputState);
     _updateWeightInputState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didPrecacheImages) return;
+
+    _didPrecacheImages = true;
+    precacheImage(const AssetImage(_characterPointingInput), context);
+    precacheImage(const AssetImage(_characterHighTouch), context);
   }
 
   @override
