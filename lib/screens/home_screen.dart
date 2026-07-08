@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/weight_providers.dart';
+import 'report_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -86,6 +87,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _isCelebrating = true;
       });
+      await Future<void>.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const ReportScreen()));
     } finally {
       if (mounted) {
         setState(() {
@@ -235,30 +242,51 @@ class _WeightInputHero extends StatelessWidget {
                           bottom: 92,
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 280),
-                            child: Image.asset(
-                              characterAsset,
+                            child: Stack(
                               key: ValueKey(characterAsset),
-                              height: 470,
-                              fit: BoxFit.contain,
-                              semanticLabel: '体重入力キャラクター',
+                              alignment: Alignment.center,
+                              children: [
+                                Image.asset(
+                                  characterAsset,
+                                  height: 470,
+                                  fit: BoxFit.contain,
+                                  semanticLabel: '体重入力キャラクター',
+                                ),
+                                if (isHighTouchEnabled)
+                                  Positioned.fill(
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final cellHeight =
+                                            constraints.maxHeight / 3;
+
+                                        return Stack(
+                                          children: [
+                                            Positioned(
+                                              left: 0,
+                                              top: cellHeight - 30,
+                                              width: constraints.maxWidth / 2,
+                                              height: cellHeight + 30,
+                                              child: Semantics(
+                                                button: true,
+                                                label: 'ハイタッチ',
+                                                child: GestureDetector(
+                                                  behavior:
+                                                      HitTestBehavior.opaque,
+                                                  onTap: onHighTouch,
+                                                  child:
+                                                      const SizedBox.expand(),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
-                        if (isHighTouchEnabled)
-                          Positioned(
-                            left: 0,
-                            bottom: 250,
-                            width: 150,
-                            height: 170,
-                            child: Semantics(
-                              button: true,
-                              label: 'ハイタッチ',
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: onHighTouch,
-                              ),
-                            ),
-                          ),
                         Positioned(
                           left: 0,
                           right: 0,

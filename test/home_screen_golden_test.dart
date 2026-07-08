@@ -7,6 +7,7 @@ import 'package:weight_report_app/models/weight_entry.dart';
 import 'package:weight_report_app/providers/weight_providers.dart';
 import 'package:weight_report_app/services/weight_repository.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
+import 'package:weight_report_app/screens/report_screen.dart';
 
 const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
@@ -144,7 +145,7 @@ void main() {
   });
 
   testWidgets(
-    'saves weight and shows celebration after tapping high-touch hand',
+    'saves weight and shows celebration after tapping high-touch character',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -166,6 +167,10 @@ void main() {
         find.byType(HomeScreen),
         matchesGoldenFile('../docs/screenshots/home-screen-celebration.png'),
       );
+
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReportScreen), findsOneWidget);
     },
   );
 
