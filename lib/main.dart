@@ -10,7 +10,10 @@ import 'services/app_error_handler.dart';
 void main() {
   runZonedGuarded(() {
     WidgetsFlutterBinding.ensureInitialized();
-    FlutterError.onError = AppErrorHandler.report;
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      AppErrorHandler.showErrorDialog(details.exception);
+    };
     PlatformDispatcher.instance.onError = (error, stackTrace) {
       AppErrorHandler.report(error, stackTrace);
       return true;
