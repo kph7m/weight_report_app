@@ -55,10 +55,16 @@ String? _assetNameForSemanticLabel(WidgetTester tester, String semanticLabel) {
 }
 
 class _FakeWeightRepository implements WeightRepository {
+  _FakeWeightRepository({this.saveError});
+
+  final Object? saveError;
   final savedWeights = <double>[];
 
   @override
   Future<void> saveToday(double weightKg) async {
+    final saveError = this.saveError;
+    if (saveError != null) throw saveError;
+
     savedWeights.add(weightKg);
   }
 
@@ -181,6 +187,26 @@ void main() {
       expect(find.byType(ReportScreen), findsOneWidget);
     },
   );
+
+  testWidgets('shows an error dialog when high-touch save fails', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _FakeWeightRepository(saveError: StateError('保存失敗'));
+
+    await _pumpHomeScreen(tester, repository: repository);
+    await tester.enterText(find.byType(TextFormField), '77.7');
+    tester.binding.focusManager.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('ハイタッチ'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('エラーが発生しました'), findsOneWidget);
+    expect(find.textContaining('保存失敗'), findsOneWidget);
+    expect(repository.savedWeights, isEmpty);
+  });
 
   testWidgets('limits weight input to numeric values, one decimal, and 999.9', (
     tester,

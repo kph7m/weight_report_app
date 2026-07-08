@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/weight_providers.dart';
+import '../services/app_error_handler.dart';
 import 'report_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -100,6 +101,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       Navigator.of(
         context,
       ).push(MaterialPageRoute<void>(builder: (_) => const ReportScreen()));
+    } catch (error, stackTrace) {
+      if (mounted) {
+        await AppErrorHandler.showErrorDialogForContext(context, error);
+      } else {
+        AppErrorHandler.report(error, stackTrace);
+      }
     } finally {
       if (mounted) {
         setState(() {
