@@ -3,22 +3,30 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:weight_report_app/models/weight_entry.dart';
 import 'package:weight_report_app/providers/weight_providers.dart';
+import 'package:weight_report_app/services/weight_repository.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
 
 const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
   'assets/images/character_pointing_input.png',
   'assets/images/character_high_touch.png',
+  'assets/images/character_celebration.png',
   'assets/images/cloud_top.png',
   'assets/images/cloud_bottom.png',
 ];
 
-Future<void> _pumpHomeScreen(WidgetTester tester) async {
+Future<void> _pumpHomeScreen(
+  WidgetTester tester, {
+  WeightRepository? repository,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         weightEntriesProvider.overrideWith((ref) => Stream.value(const [])),
+        if (repository != null)
+          weightRepositoryProvider.overrideWith((ref) async => repository),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -43,6 +51,21 @@ String? _assetNameForSemanticLabel(WidgetTester tester, String semanticLabel) {
   );
   final provider = image.image;
   return provider is AssetImage ? provider.assetName : null;
+}
+
+class _FakeWeightRepository implements WeightRepository {
+  final savedWeights = <double>[];
+
+  @override
+  Future<void> saveToday(double weightKg) async {
+    savedWeights.add(weightKg);
+  }
+
+  @override
+  Stream<List<WeightEntry>> watchEntries() => Stream.value(const []);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -119,6 +142,32 @@ void main() {
       matchesGoldenFile('../docs/screenshots/home-screen-high-touch.png'),
     );
   });
+
+  testWidgets(
+    'saves weight and shows celebration after tapping high-touch hand',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final repository = _FakeWeightRepository();
+
+      await _pumpHomeScreen(tester, repository: repository);
+      await tester.enterText(find.byType(TextFormField), '77.7');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.bySemanticsLabel('ハイタッチ'));
+      await tester.pumpAndSettle();
+
+      expect(repository.savedWeights, [77.7]);
+      expect(
+        _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
+        'assets/images/character_celebration.png',
+      );
+      await expectLater(
+        find.byType(HomeScreen),
+        matchesGoldenFile('../docs/screenshots/home-screen-celebration.png'),
+      );
+    },
+  );
 
   testWidgets('limits weight input to numeric values, one decimal, and 999.9', (
     tester,
