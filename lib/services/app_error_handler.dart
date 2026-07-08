@@ -17,7 +17,16 @@ class AppErrorHandler {
 
   static Future<void> showErrorDialog(Object error) async {
     final context = appNavigatorKey.currentContext;
-    if (context == null || !context.mounted) return;
+    if (context == null) return;
+
+    await showErrorDialogForContext(context, error);
+  }
+
+  static Future<void> showErrorDialogForContext(
+    BuildContext context,
+    Object error,
+  ) async {
+    if (!context.mounted) return;
 
     await showDialog<void>(
       context: context,

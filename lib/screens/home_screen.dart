@@ -103,19 +103,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ).push(MaterialPageRoute<void>(builder: (_) => const ReportScreen()));
     } catch (error, stackTrace) {
       if (mounted) {
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('エラーが発生しました'),
-            content: SingleChildScrollView(child: Text(error.toString())),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+        await AppErrorHandler.showErrorDialogForContext(context, error);
       } else {
         AppErrorHandler.report(error, stackTrace);
       }
