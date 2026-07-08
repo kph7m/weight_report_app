@@ -103,7 +103,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ).push(MaterialPageRoute<void>(builder: (_) => const ReportScreen()));
     } catch (error, stackTrace) {
       if (mounted) {
-        await AppErrorHandler.showErrorDialogForContext(context, error);
+        await AppErrorHandler.showErrorDialogForContext(
+          context,
+          error,
+          stackTrace,
+        );
       } else {
         AppErrorHandler.report(error, stackTrace);
       }
@@ -254,22 +258,70 @@ class _WeightInputHero extends StatelessWidget {
                       children: [
                         Positioned(
                           bottom: 92,
-                          child: Semantics(
-                            button: isHighTouchEnabled,
-                            label: isHighTouchEnabled ? 'ハイタッチ' : null,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: isHighTouchEnabled ? onHighTouch : null,
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 280),
-                                child: Image.asset(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 280),
+                            child: Stack(
+                              key: ValueKey(characterAsset),
+                              alignment: Alignment.center,
+                              children: [
+                                Image.asset(
                                   characterAsset,
-                                  key: ValueKey(characterAsset),
                                   height: 470,
                                   fit: BoxFit.contain,
                                   semanticLabel: '体重入力キャラクター',
                                 ),
-                              ),
+                                if (isHighTouchEnabled)
+                                  Positioned.fill(
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final cellHeight =
+                                            constraints.maxHeight / 3;
+
+                                        return Stack(
+                                          children: [
+                                            Positioned(
+                                              left: 0,
+                                              top: cellHeight - 30,
+                                              width: constraints.maxWidth / 2,
+                                              height: cellHeight + 30,
+                                              child: Semantics(
+                                                button: true,
+                                                label: 'ハイタッチ',
+                                                child: GestureDetector(
+                                                  behavior:
+                                                      HitTestBehavior.opaque,
+                                                  onTap: onHighTouch,
+                                                  child: IgnorePointer(
+                                                    child: DecoratedBox(
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            const Color(
+                                                              0xFF48B7FF,
+                                                            ).withValues(
+                                                              alpha: 0.18,
+                                                            ),
+                                                        border: Border.all(
+                                                          color: const Color(
+                                                            0xFF0B8FE8,
+                                                          ),
+                                                          width: 3,
+                                                        ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              28,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),

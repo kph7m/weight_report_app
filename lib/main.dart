@@ -12,7 +12,7 @@ void main() {
     WidgetsFlutterBinding.ensureInitialized();
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
-      AppErrorHandler.showErrorDialog(details.exception);
+      AppErrorHandler.showErrorDialog(details.exception, details.stack);
     };
     PlatformDispatcher.instance.onError = (error, stackTrace) {
       AppErrorHandler.report(error, stackTrace);

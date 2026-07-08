@@ -205,6 +205,7 @@ void main() {
 
     expect(find.text('エラーが発生しました'), findsOneWidget);
     expect(find.textContaining('保存失敗'), findsOneWidget);
+    expect(find.textContaining('発生箇所:'), findsOneWidget);
     expect(repository.savedWeights, isEmpty);
   });
 
