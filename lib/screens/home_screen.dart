@@ -266,28 +266,8 @@ class _WeightInputHero extends StatelessWidget {
                                                   behavior:
                                                       HitTestBehavior.opaque,
                                                   onTap: onHighTouch,
-                                                  child: IgnorePointer(
-                                                    child: DecoratedBox(
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            const Color(
-                                                              0xFF48B7FF,
-                                                            ).withValues(
-                                                              alpha: 0.18,
-                                                            ),
-                                                        border: Border.all(
-                                                          color: const Color(
-                                                            0xFF0B8FE8,
-                                                          ),
-                                                          width: 3,
-                                                        ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              28,
-                                                            ),
-                                                      ),
-                                                    ),
-                                                  ),
+                                                  child:
+                                                      const SizedBox.expand(),
                                                 ),
                                               ),
                                             ),
