@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/weight_providers.dart';
@@ -15,23 +16,89 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _characterPointingInput =
       'assets/images/character_pointing_input.png';
+  static const _characterHighTouch = 'assets/images/character_high_touch.png';
+  static const _characterCelebration =
+      'assets/images/character_celebration.png';
   static const _cloudTop = 'assets/images/cloud_top.png';
   static const _cloudBottom = 'assets/images/cloud_bottom.png';
 
   final _controller = TextEditingController(text: '00.0');
   final _formKey = GlobalKey<FormState>();
   final _focusNode = FocusNode();
+  bool _isWeightInputComplete = false;
+  bool _isCelebrating = false;
+  bool _isSavingWeight = false;
+  bool _didPrecacheImages = false;
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_updateWeightInputState);
+    _updateWeightInputState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didPrecacheImages) return;
+
+    _didPrecacheImages = true;
+    precacheImage(const AssetImage(_characterPointingInput), context);
+    precacheImage(const AssetImage(_characterHighTouch), context);
+    precacheImage(const AssetImage(_characterCelebration), context);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_updateWeightInputState);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _updateWeightInputState() {
+    final weight = double.tryParse(_controller.text);
+    final isComplete = weight != null && weight >= 30.0;
+    if (isComplete == _isWeightInputComplete) return;
+
+    setState(() {
+      _isWeightInputComplete = isComplete;
+      if (!isComplete) _isCelebrating = false;
+    });
+  }
+
+  Future<void> _handleHighTouch() async {
+    if (_isSavingWeight || !_isWeightInputComplete || _isCelebrating) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final weight = double.tryParse(_controller.text);
+    if (weight == null) return;
+
+    setState(() {
+      _isSavingWeight = true;
+    });
+
+    try {
+      final repository = await ref.read(weightRepositoryProvider.future);
+      await repository.saveToday(weight);
+      if (!mounted) return;
+
+      setState(() {
+        _isCelebrating = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingWeight = false;
+        });
+      }
+    }
+  }
+
+  String get _characterAsset {
+    if (_isCelebrating) return _characterCelebration;
+    if (_isWeightInputComplete) return _characterHighTouch;
+    return _characterPointingInput;
   }
 
   @override
@@ -49,7 +116,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   formKey: _formKey,
                   controller: _controller,
                   focusNode: _focusNode,
-                  characterAsset: _characterPointingInput,
+                  characterAsset: _characterAsset,
+                  isHighTouchEnabled:
+                      _isWeightInputComplete &&
+                      !_isCelebrating &&
+                      !_isSavingWeight,
+                  onHighTouch: _handleHighTouch,
                   cloudTopAsset: _cloudTop,
                   cloudBottomAsset: _cloudBottom,
                 ),
@@ -71,6 +143,8 @@ class _WeightInputHero extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.characterAsset,
+    required this.isHighTouchEnabled,
+    required this.onHighTouch,
     required this.cloudTopAsset,
     required this.cloudBottomAsset,
   });
@@ -79,6 +153,8 @@ class _WeightInputHero extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final String characterAsset;
+  final bool isHighTouchEnabled;
+  final VoidCallback onHighTouch;
   final String cloudTopAsset;
   final String cloudBottomAsset;
 
@@ -168,6 +244,21 @@ class _WeightInputHero extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (isHighTouchEnabled)
+                          Positioned(
+                            left: 0,
+                            bottom: 250,
+                            width: 150,
+                            height: 170,
+                            child: Semantics(
+                              button: true,
+                              label: 'ハイタッチ',
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: onHighTouch,
+                              ),
+                            ),
+                          ),
                         Positioned(
                           left: 0,
                           right: 0,
@@ -234,6 +325,7 @@ class _WeightDisplayCard extends StatelessWidget {
           focusNode: focusNode,
           textAlign: TextAlign.center,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: const [_WeightInputFormatter()],
           style: Theme.of(context).textTheme.displayLarge?.copyWith(
             color: const Color(0xFF202633),
             fontWeight: FontWeight.w800,
@@ -257,13 +349,40 @@ class _WeightDisplayCard extends StatelessWidget {
             focusedErrorBorder: inputBorder(colorScheme.error),
           ),
           validator: (value) {
-            final weight = double.tryParse(value ?? '');
-            if (weight == null || weight <= 0) return '有効な体重を入力してください';
+            final input = value ?? '';
+            final weight = double.tryParse(input);
+            if (weight == null) return '数値で入力してください';
+            if (!RegExp(r'^\d{1,3}(\.\d)?$').hasMatch(input)) {
+              return '小数点第1位まで入力してください';
+            }
+            if (weight > 999.9) return '999.9以下で入力してください';
+            if (weight <= 0) return '有効な体重を入力してください';
             return null;
           },
         ),
       ),
     );
+  }
+}
+
+class _WeightInputFormatter extends TextInputFormatter {
+  const _WeightInputFormatter();
+
+  static final _allowedPattern = RegExp(r'^(\d{0,3}|\d{1,3}\.\d?)$');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.isEmpty) return newValue;
+    if (!_allowedPattern.hasMatch(text)) return oldValue;
+
+    final weight = double.tryParse(text);
+    if (weight != null && weight > 999.9) return oldValue;
+
+    return newValue;
   }
 }
 
