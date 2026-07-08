@@ -31,15 +31,7 @@ const WeightEntrySchema = CollectionSchema(
   deserialize: _weightEntryDeserialize,
   deserializeProp: _weightEntryDeserializeProp,
   idName: r'id',
-  indexes: {
-    r'date': IndexSchema(
-      id: -2635649454994942098,
-      name: r'date',
-      unique: true,
-      replace: true,
-      properties: [IndexPropertySchema(name: r'date', type: IndexType.value, caseSensitive: false)],
-    ),
-  },
+  indexes: {},
   links: {},
   embeddedSchemas: {},
   getId: _weightEntryGetId,
@@ -48,22 +40,41 @@ const WeightEntrySchema = CollectionSchema(
   version: '3.1.0+1',
 );
 
-int _weightEntryEstimateSize(WeightEntry object, List<int> offsets, Map<Type, List<int>> allOffsets) => 0;
+int _weightEntryEstimateSize(
+  WeightEntry object,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) => 0;
 
-void _weightEntrySerialize(WeightEntry object, IsarWriter writer, List<int> offsets, Map<Type, List<int>> allOffsets) {
+void _weightEntrySerialize(
+  WeightEntry object,
+  IsarWriter writer,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
   writer.writeDateTime(offsets[0], object.createdAt);
   writer.writeDateTime(offsets[1], object.date);
   writer.writeDouble(offsets[2], object.weightKg);
 }
 
-WeightEntry _weightEntryDeserialize(Id id, IsarReader reader, List<int> offsets, Map<Type, List<int>> allOffsets) => WeightEntry(
-      id: id,
-      createdAt: reader.readDateTimeOrNull(offsets[0]),
-      date: reader.readDateTime(offsets[1]),
-      weightKg: reader.readDouble(offsets[2]),
-    );
+WeightEntry _weightEntryDeserialize(
+  Id id,
+  IsarReader reader,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) => WeightEntry(
+  id: id,
+  createdAt: reader.readDateTimeOrNull(offsets[0]),
+  date: reader.readDateTime(offsets[1]),
+  weightKg: reader.readDouble(offsets[2]),
+);
 
-P _weightEntryDeserializeProp<P>(IsarReader reader, int propertyId, int offset, Map<Type, List<int>> allOffsets) {
+P _weightEntryDeserializeProp<P>(
+  IsarReader reader,
+  int propertyId,
+  int offset,
+  Map<Type, List<int>> allOffsets,
+) {
   switch (propertyId) {
     case 0:
       return (reader.readDateTimeOrNull(offset)) as P;
@@ -78,4 +89,8 @@ P _weightEntryDeserializeProp<P>(IsarReader reader, int propertyId, int offset, 
 
 Id _weightEntryGetId(WeightEntry object) => object.id;
 List<IsarLinkBase<dynamic>> _weightEntryGetLinks(WeightEntry object) => [];
-void _weightEntryAttach(IsarCollection<dynamic> col, Id id, WeightEntry object) => object.id = id;
+void _weightEntryAttach(
+  IsarCollection<dynamic> col,
+  Id id,
+  WeightEntry object,
+) => object.id = id;

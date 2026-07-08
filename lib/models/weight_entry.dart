@@ -14,7 +14,6 @@ class WeightEntry {
 
   Id id;
 
-  @Index(unique: true, replace: true)
   DateTime date;
 
   double weightKg;

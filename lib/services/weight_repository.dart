@@ -72,7 +72,20 @@ class WeightRepository {
   Future<void> saveToday(double weightKg) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final entry = WeightEntry(date: today, weightKg: weightKg, createdAt: now);
-    await _isar.writeTxn(() => _isar.weightEntries.put(entry));
+
+    await _isar.writeTxn(() async {
+      final entries = await _isar.weightEntries.where().findAll();
+      final existingEntry = entries.cast<WeightEntry?>().firstWhere(
+        (entry) => entry?.date == today,
+        orElse: () => null,
+      );
+
+      final entry =
+          existingEntry ??
+          WeightEntry(date: today, weightKg: weightKg, createdAt: now);
+      entry.weightKg = weightKg;
+      entry.createdAt ??= now;
+      await _isar.weightEntries.put(entry);
+    });
   }
 }
