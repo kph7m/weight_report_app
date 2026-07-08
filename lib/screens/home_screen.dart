@@ -233,32 +233,25 @@ class _WeightInputHero extends StatelessWidget {
                       children: [
                         Positioned(
                           bottom: 92,
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 280),
-                            child: Image.asset(
-                              characterAsset,
-                              key: ValueKey(characterAsset),
-                              height: 470,
-                              fit: BoxFit.contain,
-                              semanticLabel: '体重入力キャラクター',
-                            ),
-                          ),
-                        ),
-                        if (isHighTouchEnabled)
-                          Positioned(
-                            left: 0,
-                            bottom: 250,
-                            width: 150,
-                            height: 170,
-                            child: Semantics(
-                              button: true,
-                              label: 'ハイタッチ',
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: onHighTouch,
+                          child: Semantics(
+                            button: isHighTouchEnabled,
+                            label: isHighTouchEnabled ? 'ハイタッチ' : null,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: isHighTouchEnabled ? onHighTouch : null,
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 280),
+                                child: Image.asset(
+                                  characterAsset,
+                                  key: ValueKey(characterAsset),
+                                  height: 470,
+                                  fit: BoxFit.contain,
+                                  semanticLabel: '体重入力キャラクター',
+                                ),
                               ),
                             ),
                           ),
+                        ),
                         Positioned(
                           left: 0,
                           right: 0,

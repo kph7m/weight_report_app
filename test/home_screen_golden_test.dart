@@ -144,7 +144,7 @@ void main() {
   });
 
   testWidgets(
-    'saves weight and shows celebration after tapping high-touch hand',
+    'saves weight and shows celebration after tapping high-touch character',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
