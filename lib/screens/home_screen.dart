@@ -233,45 +233,54 @@ class _WeightInputHero extends StatelessWidget {
                       children: [
                         Positioned(
                           bottom: 92,
-                          child: Semantics(
-                            button: isHighTouchEnabled,
-                            label: isHighTouchEnabled ? 'ハイタッチ' : null,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: isHighTouchEnabled ? onHighTouch : null,
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 280),
-                                child: Stack(
-                                  key: ValueKey(characterAsset),
-                                  alignment: Alignment.center,
-                                  children: [
-                                    Image.asset(
-                                      characterAsset,
-                                      height: 470,
-                                      fit: BoxFit.contain,
-                                      semanticLabel: '体重入力キャラクター',
-                                    ),
-                                    if (isHighTouchEnabled)
-                                      Positioned.fill(
-                                        child: IgnorePointer(
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              color: const Color(
-                                                0xFF48B7FF,
-                                              ).withValues(alpha: 0.18),
-                                              border: Border.all(
-                                                color: const Color(0xFF0B8FE8),
-                                                width: 3,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 280),
+                            child: Stack(
+                              key: ValueKey(characterAsset),
+                              alignment: Alignment.center,
+                              children: [
+                                Image.asset(
+                                  characterAsset,
+                                  height: 470,
+                                  fit: BoxFit.contain,
+                                  semanticLabel: '体重入力キャラクター',
+                                ),
+                                if (isHighTouchEnabled)
+                                  Positioned.fill(
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: FractionallySizedBox(
+                                        widthFactor: 0.5,
+                                        heightFactor: 1 / 3,
+                                        child: Semantics(
+                                          button: true,
+                                          label: 'ハイタッチ',
+                                          child: GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            onTap: onHighTouch,
+                                            child: IgnorePointer(
+                                              child: DecoratedBox(
+                                                decoration: BoxDecoration(
+                                                  color: const Color(
+                                                    0xFF48B7FF,
+                                                  ).withValues(alpha: 0.18),
+                                                  border: Border.all(
+                                                    color: const Color(
+                                                      0xFF0B8FE8,
+                                                    ),
+                                                    width: 3,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(28),
+                                                ),
                                               ),
-                                              borderRadius:
-                                                  BorderRadius.circular(28),
                                             ),
                                           ),
                                         ),
                                       ),
-                                  ],
-                                ),
-                              ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
