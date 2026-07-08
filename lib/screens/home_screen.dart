@@ -35,6 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _controller.addListener(_updateWeightInputState);
+    _focusNode.addListener(_updateWeightInputState);
     _updateWeightInputState();
   }
 
@@ -52,14 +53,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void dispose() {
     _controller.removeListener(_updateWeightInputState);
+    _focusNode.removeListener(_updateWeightInputState);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
   void _updateWeightInputState() {
-    final weight = double.tryParse(_controller.text);
-    final isComplete = weight != null && weight >= 30.0;
+    final input = _controller.text;
+    final weight = double.tryParse(input);
+    final isComplete =
+        !_focusNode.hasFocus &&
+        weight != null &&
+        weight >= 30.0 &&
+        RegExp(r'^\d{1,3}\.\d$').hasMatch(input);
     if (isComplete == _isWeightInputComplete) return;
 
     setState(() {
@@ -240,50 +247,22 @@ class _WeightInputHero extends StatelessWidget {
                       children: [
                         Positioned(
                           bottom: 92,
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 280),
-                            child: Stack(
-                              key: ValueKey(characterAsset),
-                              alignment: Alignment.center,
-                              children: [
-                                Image.asset(
+                          child: Semantics(
+                            button: isHighTouchEnabled,
+                            label: isHighTouchEnabled ? 'ハイタッチ' : null,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: isHighTouchEnabled ? onHighTouch : null,
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 280),
+                                child: Image.asset(
                                   characterAsset,
+                                  key: ValueKey(characterAsset),
                                   height: 470,
                                   fit: BoxFit.contain,
                                   semanticLabel: '体重入力キャラクター',
                                 ),
-                                if (isHighTouchEnabled)
-                                  Positioned.fill(
-                                    child: LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final cellHeight =
-                                            constraints.maxHeight / 3;
-
-                                        return Stack(
-                                          children: [
-                                            Positioned(
-                                              left: 0,
-                                              top: cellHeight - 30,
-                                              width: constraints.maxWidth / 2,
-                                              height: cellHeight + 30,
-                                              child: Semantics(
-                                                button: true,
-                                                label: 'ハイタッチ',
-                                                child: GestureDetector(
-                                                  behavior:
-                                                      HitTestBehavior.opaque,
-                                                  onTap: onHighTouch,
-                                                  child:
-                                                      const SizedBox.expand(),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                              ],
+                              ),
                             ),
                           ),
                         ),

@@ -121,6 +121,13 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField), '30.0');
     await tester.pumpAndSettle();
+    expect(
+      _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
+      'assets/images/character_pointing_input.png',
+    );
+
+    tester.binding.focusManager.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(seconds: 1));
     });
@@ -153,6 +160,7 @@ void main() {
 
       await _pumpHomeScreen(tester, repository: repository);
       await tester.enterText(find.byType(TextFormField), '77.7');
+      tester.binding.focusManager.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
 
       await tester.tap(find.bySemanticsLabel('ハイタッチ'));
