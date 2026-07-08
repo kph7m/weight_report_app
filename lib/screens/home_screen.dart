@@ -247,37 +247,53 @@ class _WeightInputHero extends StatelessWidget {
                                 ),
                                 if (isHighTouchEnabled)
                                   Positioned.fill(
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: FractionallySizedBox(
-                                        widthFactor: 0.5,
-                                        heightFactor: 1 / 3,
-                                        child: Semantics(
-                                          button: true,
-                                          label: 'ハイタッチ',
-                                          child: GestureDetector(
-                                            behavior: HitTestBehavior.opaque,
-                                            onTap: onHighTouch,
-                                            child: IgnorePointer(
-                                              child: DecoratedBox(
-                                                decoration: BoxDecoration(
-                                                  color: const Color(
-                                                    0xFF48B7FF,
-                                                  ).withValues(alpha: 0.18),
-                                                  border: Border.all(
-                                                    color: const Color(
-                                                      0xFF0B8FE8,
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final cellHeight =
+                                            constraints.maxHeight / 3;
+
+                                        return Stack(
+                                          children: [
+                                            Positioned(
+                                              left: 0,
+                                              top: cellHeight - 10,
+                                              width: constraints.maxWidth / 2,
+                                              height: cellHeight + 10,
+                                              child: Semantics(
+                                                button: true,
+                                                label: 'ハイタッチ',
+                                                child: GestureDetector(
+                                                  behavior:
+                                                      HitTestBehavior.opaque,
+                                                  onTap: onHighTouch,
+                                                  child: IgnorePointer(
+                                                    child: DecoratedBox(
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            const Color(
+                                                              0xFF48B7FF,
+                                                            ).withValues(
+                                                              alpha: 0.18,
+                                                            ),
+                                                        border: Border.all(
+                                                          color: const Color(
+                                                            0xFF0B8FE8,
+                                                          ),
+                                                          width: 3,
+                                                        ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              28,
+                                                            ),
+                                                      ),
                                                     ),
-                                                    width: 3,
                                                   ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(28),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ),
-                                      ),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ),
                               ],
