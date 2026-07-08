@@ -241,12 +241,35 @@ class _WeightInputHero extends StatelessWidget {
                               onTap: isHighTouchEnabled ? onHighTouch : null,
                               child: AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 280),
-                                child: Image.asset(
-                                  characterAsset,
+                                child: Stack(
                                   key: ValueKey(characterAsset),
-                                  height: 470,
-                                  fit: BoxFit.contain,
-                                  semanticLabel: '体重入力キャラクター',
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Image.asset(
+                                      characterAsset,
+                                      height: 470,
+                                      fit: BoxFit.contain,
+                                      semanticLabel: '体重入力キャラクター',
+                                    ),
+                                    if (isHighTouchEnabled)
+                                      Positioned.fill(
+                                        child: IgnorePointer(
+                                          child: DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              color: const Color(
+                                                0xFF48B7FF,
+                                              ).withValues(alpha: 0.18),
+                                              border: Border.all(
+                                                color: const Color(0xFF0B8FE8),
+                                                width: 3,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(28),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             ),
