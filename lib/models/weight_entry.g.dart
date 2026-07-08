@@ -44,7 +44,7 @@ int _weightEntryEstimateSize(
   WeightEntry object,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
-) => 0;
+) => offsets.last;
 
 void _weightEntrySerialize(
   WeightEntry object,
