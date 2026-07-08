@@ -256,9 +256,9 @@ class _WeightInputHero extends StatelessWidget {
                                           children: [
                                             Positioned(
                                               left: 0,
-                                              top: cellHeight - 10,
+                                              top: cellHeight - 30,
                                               width: constraints.maxWidth / 2,
-                                              height: cellHeight + 10,
+                                              height: cellHeight + 30,
                                               child: Semantics(
                                                 button: true,
                                                 label: 'ハイタッチ',
