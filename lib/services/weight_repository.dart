@@ -6,16 +6,17 @@ import 'package:path_provider/path_provider.dart';
 import '../models/weight_entry.dart';
 
 class WeightRepository {
-  WeightRepository(this._isar);
+  WeightRepository(this._isar, this._directoryPath);
 
-  final Isar _isar;
+  Isar _isar;
+  final String _directoryPath;
 
   static const _schemas = [WeightEntrySchema];
 
   static Future<WeightRepository> open() async {
     final directory = await getApplicationDocumentsDirectory();
     final isar = await _openIsar(directory.path);
-    return WeightRepository(isar);
+    return WeightRepository(isar, directory.path);
   }
 
   static Future<Isar> _openIsar(String directoryPath) async {
@@ -73,19 +74,54 @@ class WeightRepository {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    await _isar.writeTxn(() async {
-      final entries = await _isar.weightEntries.where().findAll();
-      final existingEntry = entries.cast<WeightEntry?>().firstWhere(
-        (entry) => entry?.date == today,
-        orElse: () => null,
-      );
+    await _runWithDatabaseRecovery(() async {
+      await _isar.writeTxn(() async {
+        final entries = await _isar.weightEntries.where().findAll();
+        final existingEntry = entries.cast<WeightEntry?>().firstWhere(
+          (entry) => entry?.date == today,
+          orElse: () => null,
+        );
 
-      final entry =
-          existingEntry ??
-          WeightEntry(date: today, weightKg: weightKg, createdAt: now);
-      entry.weightKg = weightKg;
-      entry.createdAt ??= now;
-      await _isar.weightEntries.put(entry);
-    });
+        final entry =
+            existingEntry ??
+            WeightEntry(date: today, weightKg: weightKg, createdAt: now);
+        entry.weightKg = weightKg;
+        entry.createdAt ??= now;
+        await _isar.weightEntries.put(entry);
+      });
+    }, recoverOnInvalidOffsets: true);
+  }
+
+  Future<T> _runWithDatabaseRecovery<T>(
+    Future<T> Function() action, {
+    required bool recoverOnInvalidOffsets,
+  }) async {
+    try {
+      return await action();
+    } on RangeError catch (error) {
+      if (!recoverOnInvalidOffsets || !_isInvalidIsarOffsetError(error)) {
+        rethrow;
+      }
+
+      await _replaceDevelopmentDatabase();
+      return action();
+    }
+  }
+
+  static bool _isInvalidIsarOffsetError(RangeError error) {
+    final name = error.name;
+    final message = error.message;
+    return name == 'byteOffset' ||
+        (message is String && message.contains('Index out of range'));
+  }
+
+  Future<void> _replaceDevelopmentDatabase() async {
+    if (_isar.isOpen) {
+      await _isar.close(deleteFromDisk: true);
+    } else {
+      await _deleteDevelopmentDatabase(_directoryPath);
+    }
+
+    _isar = await _openIsar(_directoryPath);
   }
 }
