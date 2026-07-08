@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/weight_providers.dart';
+import 'report_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -86,6 +87,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _isCelebrating = true;
       });
+      await Future<void>.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const ReportScreen()));
     } finally {
       if (mounted) {
         setState(() {
