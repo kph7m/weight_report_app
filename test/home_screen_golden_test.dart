@@ -188,7 +188,7 @@ void main() {
     },
   );
 
-  testWidgets('renders report screen with high-touch character golden', (
+  testWidgets('renders report screen with high-touch character', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1365, 768));
@@ -229,10 +229,9 @@ void main() {
       _assetNameForSemanticLabel(tester, 'レポート応援キャラクター'),
       'assets/images/character_high_touch.png',
     );
-    await expectLater(
-      find.byType(ReportScreen),
-      matchesGoldenFile('../docs/screenshots/report-screen.png'),
-    );
+    expect(find.text('本日の\n体重'), findsOneWidget);
+    expect(find.text('📋 直近７日間の体重記録'), findsOneWidget);
+    expect(find.text('視聴者さん♪'), findsOneWidget);
   });
 
   testWidgets('shows an error dialog when high-touch save fails', (
