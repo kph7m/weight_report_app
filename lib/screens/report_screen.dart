@@ -55,54 +55,59 @@ class _ReportBody extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final scale = (constraints.maxWidth / 922).clamp(0.72, 1.0).toDouble();
-        return SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(14 * scale, 12 * scale, 14 * scale, 24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 920),
-              child: DefaultTextStyle.merge(
-                style: const TextStyle(
-                  color: _ink,
-                  fontFamily: 'Noto Sans JP',
-                  fontWeight: FontWeight.w700,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _ReportHeroHeader(latest: latest, scale: scale),
-                    SizedBox(height: 8 * scale),
-                    Center(
-                      child: _MeasuredDateBadge(
-                        date: latest?.date ?? DateTime.now(),
+        const designSize = Size(922, 1706);
+        const scale = 1.0;
+        return Center(
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: SizedBox(
+              width: designSize.width,
+              height: designSize.height,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+                child: DefaultTextStyle.merge(
+                  style: const TextStyle(
+                    color: _ink,
+                    fontFamily: 'Noto Sans JP',
+                    fontWeight: FontWeight.w700,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _ReportHeroHeader(latest: latest, scale: scale),
+                      const SizedBox(height: 8),
+                      Center(
+                        child: _MeasuredDateBadge(
+                          date: latest?.date ?? DateTime.now(),
+                          scale: scale,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _RibbonTitle(scale: scale),
+                      const SizedBox(height: 8),
+                      _SevenDayTable(rows: rows, scale: scale),
+                      const SizedBox(height: 6),
+                      const Text(
+                        '※7日平均は、その日を含む過去7日間の平均体重です。',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 14),
+                      _SummaryCards(
+                        remaining: remaining,
+                        previousDiff: previousDiff,
                         scale: scale,
                       ),
-                    ),
-                    SizedBox(height: 12 * scale),
-                    _RibbonTitle(scale: scale),
-                    SizedBox(height: 8 * scale),
-                    _SevenDayTable(rows: rows, scale: scale),
-                    SizedBox(height: 6 * scale),
-                    Text(
-                      '※7日平均は、その日を含む過去7日間の平均体重です。',
-                      style: TextStyle(fontSize: 16 * scale),
-                    ),
-                    SizedBox(height: 14 * scale),
-                    _SummaryCards(
-                      remaining: remaining,
-                      previousDiff: previousDiff,
-                      scale: scale,
-                    ),
-                    SizedBox(height: 14 * scale),
-                    _CharacterMessageRow(
-                      latestWeight: latestWeight,
-                      previousDiff: previousDiff,
-                      remaining: remaining,
-                      scale: scale,
-                    ),
-                    SizedBox(height: 16 * scale),
-                    _FooterMessage(scale: scale),
-                  ],
+                      const SizedBox(height: 14),
+                      _CharacterMessageRow(
+                        latestWeight: latestWeight,
+                        previousDiff: previousDiff,
+                        remaining: remaining,
+                        scale: scale,
+                      ),
+                      const Spacer(),
+                      _FooterMessage(scale: scale),
+                    ],
+                  ),
                 ),
               ),
             ),

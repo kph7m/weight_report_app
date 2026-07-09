@@ -230,6 +230,7 @@ void main() {
     expect(find.text('本日の\n体重'), findsOneWidget);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.text('視聴者さん♪'), findsOneWidget);
+    expect(find.byType(SingleChildScrollView), findsNothing);
     await expectLater(
       find.byType(ReportScreen),
       matchesGoldenFile('../docs/screenshots/report-screen.png'),
