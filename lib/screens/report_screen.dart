@@ -46,111 +46,140 @@ class _ReportBody extends StatelessWidget {
     final previousDiff = latestWeight == null || previous == null
         ? null
         : latestWeight - previous.weightKg;
+    final effectiveAverage = sevenDayAverage ?? latestWeight;
     final remaining = latestWeight == null
         ? null
         : (latestWeight - targetWeightKg).clamp(0, double.infinity).toDouble();
-    final progress = latestWeight == null
-        ? 0.0
-        : (targetWeightKg / latestWeight).clamp(0.0, 1.0).toDouble();
-    final trendLabel = _trendLabel(previousDiff);
+    final averageDiff = latestWeight == null || effectiveAverage == null
+        ? null
+        : latestWeight - effectiveAverage;
+    final rows = _recentRows(entries, effectiveAverage);
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-      children: [
-        _ReportHeader(latest: latest),
-        const SizedBox(height: 16),
-        GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.28,
-          children: [
-            _MetricCard(
-              label: '最新体重',
-              value: latestWeight == null
-                  ? '--'
-                  : latestWeight.toStringAsFixed(1),
-              unit: 'kg',
-            ),
-            _MetricCard(
-              label: '直近7日平均',
-              value: sevenDayAverage == null
-                  ? '--'
-                  : sevenDayAverage!.toStringAsFixed(1),
-              unit: 'kg',
-            ),
-            _MetricCard(
-              label: '前回との差分',
-              value: previousDiff == null
-                  ? '--'
-                  : previousDiff.toStringAsFixed(1),
-              unit: 'kg',
-            ),
-            _MetricCard(
-              label: '記録日数',
-              value: entries.length.toString(),
-              unit: '日',
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '目標75kgまで',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 860;
+        final content = isWide
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 13,
+                    child: _MainReportColumn(
+                      latest: latest,
+                      rows: rows,
+                      latestWeight: latestWeight,
+                      previousDiff: previousDiff,
+                      sevenDayAverage: effectiveAverage,
+                      averageDiff: averageDiff,
+                      remaining: remaining,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  remaining == null
-                      ? '-- kg'
-                      : '${remaining.toStringAsFixed(1)} kg',
-                ),
-                const SizedBox(height: 10),
-                LinearProgressIndicator(value: progress),
-                const SizedBox(height: 10),
-                Text('週ごとの傾向: $trendLabel'),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          '体重履歴',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 8),
-        if (entries.isEmpty)
-          const Card(child: ListTile(title: Text('まだ記録がありません')))
-        else
-          ...entries.map(
-            (entry) => Card(
-              child: ListTile(
-                leading: const Icon(Icons.monitor_weight_outlined),
-                title: Text('${entry.weightKg.toStringAsFixed(1)} kg'),
-                subtitle: Text(DateFormat.yMMMd().format(entry.date)),
-              ),
-            ),
-          ),
-      ],
+                  const SizedBox(width: 18),
+                  Expanded(
+                    flex: 6,
+                    child: _ViewerMessagePanel(
+                      latestWeight: latestWeight,
+                      previousDiff: previousDiff,
+                      remaining: remaining,
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                children: [
+                  _MainReportColumn(
+                    latest: latest,
+                    rows: rows,
+                    latestWeight: latestWeight,
+                    previousDiff: previousDiff,
+                    sevenDayAverage: effectiveAverage,
+                    averageDiff: averageDiff,
+                    remaining: remaining,
+                  ),
+                  const SizedBox(height: 16),
+                  _ViewerMessagePanel(
+                    latestWeight: latestWeight,
+                    previousDiff: previousDiff,
+                    remaining: remaining,
+                  ),
+                ],
+              );
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 20),
+          child: content,
+        );
+      },
     );
   }
 
-  String _trendLabel(double? diff) {
-    if (diff == null) return '比較できる前回記録がありません';
-    if (diff < 0) return '前回より減少しています';
-    if (diff > 0) return '前回より増加しています';
-    return '前回から変化はありません';
+  List<_ReportRowData> _recentRows(
+    List<WeightEntry> source,
+    double? fallbackAverage,
+  ) {
+    final sorted = [...source]..sort((a, b) => b.date.compareTo(a.date));
+    return List.generate(7, (index) {
+      if (index >= sorted.length) return _ReportRowData.empty();
+      final entry = sorted[index];
+      final previous = index + 1 < sorted.length ? sorted[index + 1] : null;
+      return _ReportRowData(
+        date: entry.date,
+        weight: entry.weightKg,
+        diff: previous == null ? null : entry.weightKg - previous.weightKg,
+        average: fallbackAverage,
+      );
+    });
+  }
+}
+
+class _MainReportColumn extends StatelessWidget {
+  const _MainReportColumn({
+    required this.latest,
+    required this.rows,
+    required this.latestWeight,
+    required this.previousDiff,
+    required this.sevenDayAverage,
+    required this.averageDiff,
+    required this.remaining,
+  });
+
+  final WeightEntry? latest;
+  final List<_ReportRowData> rows;
+  final double? latestWeight;
+  final double? previousDiff;
+  final double? sevenDayAverage;
+  final double? averageDiff;
+  final double? remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _ReportHeader(latest: latest),
+        const SizedBox(height: 12),
+        const _RibbonTitle(),
+        const SizedBox(height: 10),
+        _SevenDayTable(rows: rows),
+        const SizedBox(height: 6),
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: Text('※7日平均は、その日を含む過去7日間の平均体重です。'),
+        ),
+        const SizedBox(height: 12),
+        _SummaryCards(
+          latestWeight: latestWeight,
+          sevenDayAverage: sevenDayAverage,
+          averageDiff: averageDiff,
+          remaining: remaining,
+          previousDiff: previousDiff,
+        ),
+        const SizedBox(height: 10),
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: Text('💡毎日の積み重ねが、未来の自分をつくりますわっ！ 今日も本当におつかれさまでしたっ✨'),
+        ),
+      ],
+    );
   }
 }
 
@@ -161,81 +190,439 @@ class _ReportHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    final weight = latest?.weightKg;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFE8F5), Color(0xFFFFFBFD)],
-        ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFF5A4CF)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFF7BAC), width: 2),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '今日のレポート',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
+      child: Row(
+        children: [
+          const Text(
+            '本日の\n体重',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFFFF4081),
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              height: 1.15,
             ),
-            const SizedBox(height: 8),
-            Text(
-              latest == null
-                  ? '記録を保存すると、ここに体重管理情報が表示されます。'
-                  : '${DateFormat.yMMMd().format(latest!.date)} の記録を保存しました。',
+          ),
+          const SizedBox(width: 16),
+          const Text('⚖️', style: TextStyle(fontSize: 34)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    color: Color(0xFF191919),
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'Noto Sans JP',
+                  ),
+                  children: [
+                    TextSpan(
+                      text: weight == null
+                          ? '--.-kg'
+                          : '${weight.toStringAsFixed(1)}kg',
+                      style: const TextStyle(
+                        color: Color(0xFFF50057),
+                        fontSize: 54,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: ' でしたわー!! ✨',
+                      style: TextStyle(fontSize: 32),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RibbonTitle extends StatelessWidget {
+  const _RibbonTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 42, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF4081),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: const Text(
+        '📋 直近７日間の体重記録',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.unit,
-  });
+class _SevenDayTable extends StatelessWidget {
+  const _SevenDayTable({required this.rows});
 
-  final String label;
-  final String value;
-  final String unit;
+  final List<_ReportRowData> rows;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 8),
-            RichText(
-              text: TextSpan(
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: const Color(0xFF202633),
-                  fontWeight: FontWeight.w900,
-                ),
-                children: [
-                  TextSpan(text: value),
-                  TextSpan(
-                    text: ' $unit',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF202633),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Table(
+        border: TableBorder.all(color: const Color(0xFFFFD5E4)),
+        columnWidths: const {
+          0: FlexColumnWidth(1.8),
+          1: FlexColumnWidth(1.1),
+          2: FlexColumnWidth(1),
+          3: FlexColumnWidth(1.7),
+        },
+        children: [
+          _tableRow(const [
+            Text('日付（JST）'),
+            Text('体重'),
+            Text('前日比'),
+            Text('7日平均'),
+          ], isHeader: true),
+          ...rows.map((row) => _tableRow(row.cells)),
+        ],
       ),
     );
   }
+
+  TableRow _tableRow(List<Widget> cells, {bool isHeader = false}) {
+    return TableRow(
+      decoration: BoxDecoration(
+        color: isHeader ? const Color(0xFFFF4081) : Colors.white,
+      ),
+      children: cells
+          .map(
+            (cell) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+              child: DefaultTextStyle.merge(
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isHeader ? Colors.white : const Color(0xFF1F1F1F),
+                  fontSize: isHeader ? 18 : 19,
+                  fontWeight: isHeader ? FontWeight.w900 : FontWeight.w700,
+                ),
+                child: cell,
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _SummaryCards extends StatelessWidget {
+  const _SummaryCards({
+    required this.latestWeight,
+    required this.sevenDayAverage,
+    required this.averageDiff,
+    required this.remaining,
+    required this.previousDiff,
+  });
+
+  final double? latestWeight;
+  final double? sevenDayAverage;
+  final double? averageDiff;
+  final double? remaining;
+  final double? previousDiff;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < 560;
+        final cards = [
+          _SummaryCard(
+            title: '🎯 目標体重',
+            value: '75.0',
+            unit: 'kg',
+            footer: _remainingText(remaining),
+            color: const Color(0xFFF50057),
+          ),
+          _SummaryCard(
+            title: '📈 過去７日平均',
+            value: _formatNumber(sevenDayAverage),
+            unit: 'kg',
+            footer: _diffText('前日比', averageDiff),
+            color: const Color(0xFF2563EB),
+          ),
+          _SummaryCard(
+            title: '🚩 目標まであと',
+            value: _formatNumber(remaining),
+            unit: 'kg',
+            footer: _diffText('前日比', previousDiff),
+            color: const Color(0xFF168A2F),
+          ),
+        ];
+        if (narrow) {
+          return Column(
+            children: cards
+                .map(
+                  (card) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: card,
+                  ),
+                )
+                .toList(),
+          );
+        }
+        return Row(
+          children: cards
+              .map(
+                (card) => Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: card,
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.title,
+    required this.value,
+    required this.unit,
+    required this.footer,
+    required this.color,
+  });
+
+  final String title;
+  final String value;
+  final String unit;
+  final String footer;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          RichText(
+            text: TextSpan(
+              style: TextStyle(
+                color: color,
+                fontFamily: 'Noto Sans JP',
+                fontWeight: FontWeight.w900,
+              ),
+              children: [
+                TextSpan(text: value, style: const TextStyle(fontSize: 34)),
+                TextSpan(text: unit, style: const TextStyle(fontSize: 20)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            footer,
+            style: TextStyle(color: color, fontWeight: FontWeight.w900),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewerMessagePanel extends StatelessWidget {
+  const _ViewerMessagePanel({
+    required this.latestWeight,
+    required this.previousDiff,
+    required this.remaining,
+  });
+
+  final double? latestWeight;
+  final double? previousDiff;
+  final double? remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFE4EF),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFFF9BC2)),
+          ),
+          child: Text(
+            '測定日：${_formatJstDate(DateTime.now())} JST',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(42),
+            border: Border.all(color: const Color(0xFFFF8DB8), width: 2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '視聴者さん♪',
+                style: TextStyle(
+                  color: Color(0xFFF50057),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '本日は ${_formatNumber(latestWeight)}kg でしたわー!!',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '前日より ${_formatSigned(previousDiff)}kg、7日平均もチェックですの〜✨',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 14),
+                child: Divider(
+                  color: Color(0xFFFF8DB8),
+                  thickness: 1,
+                  height: 1,
+                ),
+              ),
+              Text(
+                'この調子で、ゆるやかでも確実に減少傾向を続けていきますわ！\n焦らずコツコツが一番ですのっ♪\n一緒に目標の75kgまで、あと ${_formatNumber(remaining)}kg がんばりましょうねっ💪💕',
+                style: const TextStyle(
+                  fontSize: 17,
+                  height: 1.75,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            const Positioned(
+              left: 6,
+              top: 30,
+              child: Text(
+                '✦',
+                style: TextStyle(color: Color(0xFFFF8DB8), fontSize: 28),
+              ),
+            ),
+            const Positioned(
+              right: 2,
+              top: 4,
+              child: Text(
+                '✦',
+                style: TextStyle(color: Color(0xFFFF8DB8), fontSize: 28),
+              ),
+            ),
+            Image.asset(
+              'assets/images/character_high_touch.png',
+              semanticLabel: 'レポート応援キャラクター',
+              fit: BoxFit.contain,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ReportRowData {
+  const _ReportRowData({this.date, this.weight, this.diff, this.average});
+  const _ReportRowData.empty()
+    : date = null,
+      weight = null,
+      diff = null,
+      average = null;
+
+  final DateTime? date;
+  final double? weight;
+  final double? diff;
+  final double? average;
+
+  List<Widget> get cells => [
+    Text(date == null ? '--' : _formatJstDate(date!)),
+    Text(weight == null ? '--' : '${weight!.toStringAsFixed(1)}kg'),
+    Text(
+      _formatSigned(diff),
+      style: TextStyle(
+        color: diff == null
+            ? const Color(0xFF4B5563)
+            : diff! > 0
+            ? const Color(0xFFF50057)
+            : diff! < 0
+            ? const Color(0xFF2563EB)
+            : const Color(0xFF4B5563),
+      ),
+    ),
+    Text(
+      average == null ? '--' : '${average!.toStringAsFixed(2)}kg',
+      style: const TextStyle(color: Color(0xFFF50057)),
+    ),
+  ];
+}
+
+String _formatNumber(double? value) =>
+    value == null ? '--' : value.toStringAsFixed(1);
+String _formatSigned(double? value) => value == null
+    ? '±0.0'
+    : '${value > 0
+          ? '+'
+          : value < 0
+          ? '−'
+          : '±'}${value.abs().toStringAsFixed(1)}';
+String _remainingText(double? value) => '目標まであと ${_formatNumber(value)}kg';
+String _diffText(String label, double? value) =>
+    '$label ${_formatSigned(value)}kg';
+
+String _formatJstDate(DateTime date) {
+  const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
+  final weekday = weekdays[date.weekday - 1];
+  return '${date.year}/${date.month}/${date.day}（$weekday）';
 }
