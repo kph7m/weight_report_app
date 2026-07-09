@@ -189,7 +189,7 @@ void main() {
   testWidgets('renders report screen with high-touch character', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(1365, 768));
+    await tester.binding.setSurfaceSize(const Size(922, 1706));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final entries = [
       WeightEntry(date: DateTime(2026, 6, 30), weightKg: 86.3),
