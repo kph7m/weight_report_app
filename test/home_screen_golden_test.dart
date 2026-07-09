@@ -77,8 +77,6 @@ class _FakeWeightRepository implements WeightRepository {
 
 void main() {
   setUpAll(() async {
-    await _loadBundledFonts();
-    await _loadMaterialIconsFont();
     await _verifyRequiredImageAssets();
   });
 
@@ -188,6 +186,56 @@ void main() {
     },
   );
 
+  testWidgets('renders report screen with high-touch character', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(922, 1706));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final entries = [
+      WeightEntry(date: DateTime(2026, 6, 30), weightKg: 86.3),
+      WeightEntry(date: DateTime(2026, 6, 29), weightKg: 86.7),
+      WeightEntry(date: DateTime(2026, 6, 28), weightKg: 85.8),
+      WeightEntry(date: DateTime(2026, 6, 27), weightKg: 87.3),
+      WeightEntry(date: DateTime(2026, 6, 26), weightKg: 87.3),
+      WeightEntry(date: DateTime(2026, 6, 25), weightKg: 87.3),
+      WeightEntry(date: DateTime(2026, 6, 24), weightKg: 87.3),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          weightEntriesProvider.overrideWith((ref) => Stream.value(entries)),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFFEF5EA8),
+            ),
+            fontFamily: _fontFamily,
+            scaffoldBackgroundColor: const Color(0xFFFFF7FB),
+            useMaterial3: true,
+          ),
+          home: const ReportScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('レポート応援キャラクター'), findsOneWidget);
+    expect(
+      _assetNameForSemanticLabel(tester, 'レポート応援キャラクター'),
+      'assets/images/character_high_touch.png',
+    );
+    expect(find.text('本日の\n体重'), findsOneWidget);
+    expect(find.text('直近７日間の体重記録'), findsOneWidget);
+    expect(find.text('視聴者さん♪'), findsOneWidget);
+    await expectLater(
+      find.byType(ReportScreen),
+      matchesGoldenFile('../docs/screenshots/report-screen.png'),
+    );
+  });
+
   testWidgets('shows an error dialog when high-touch save fails', (
     tester,
   ) async {
@@ -235,19 +283,6 @@ void main() {
     await tester.pump();
     expect(find.widgetWithText(TextFormField, '123.4'), findsOneWidget);
   });
-}
-
-Future<void> _loadBundledFonts() async {
-  final fontLoader = FontLoader(_fontFamily)
-    ..addFont(rootBundle.load('assets/fonts/NotoSansJP-Regular.ttf'))
-    ..addFont(rootBundle.load('assets/fonts/NotoSansJP-Bold.ttf'));
-  await fontLoader.load();
-}
-
-Future<void> _loadMaterialIconsFont() async {
-  final fontLoader = FontLoader('MaterialIcons')
-    ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
-  await fontLoader.load();
 }
 
 Future<void> _verifyRequiredImageAssets() async {
