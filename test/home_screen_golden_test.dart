@@ -77,8 +77,6 @@ class _FakeWeightRepository implements WeightRepository {
 
 void main() {
   setUpAll(() async {
-    await _loadBundledFonts();
-    await _loadMaterialIconsFont();
     await _verifyRequiredImageAssets();
   });
 
@@ -230,8 +228,12 @@ void main() {
       'assets/images/character_high_touch.png',
     );
     expect(find.text('本日の\n体重'), findsOneWidget);
-    expect(find.text('📋 直近７日間の体重記録'), findsOneWidget);
+    expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.text('視聴者さん♪'), findsOneWidget);
+    await expectLater(
+      find.byType(ReportScreen),
+      matchesGoldenFile('../docs/screenshots/report-screen.png'),
+    );
   });
 
   testWidgets('shows an error dialog when high-touch save fails', (
@@ -281,19 +283,6 @@ void main() {
     await tester.pump();
     expect(find.widgetWithText(TextFormField, '123.4'), findsOneWidget);
   });
-}
-
-Future<void> _loadBundledFonts() async {
-  final fontLoader = FontLoader(_fontFamily)
-    ..addFont(rootBundle.load('assets/fonts/NotoSansJP-Regular.ttf'))
-    ..addFont(rootBundle.load('assets/fonts/NotoSansJP-Bold.ttf'));
-  await fontLoader.load();
-}
-
-Future<void> _loadMaterialIconsFont() async {
-  final fontLoader = FontLoader('MaterialIcons')
-    ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
-  await fontLoader.load();
 }
 
 Future<void> _verifyRequiredImageAssets() async {

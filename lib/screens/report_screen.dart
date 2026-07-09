@@ -175,7 +175,7 @@ class _MainReportColumn extends StatelessWidget {
         const SizedBox(height: 10),
         const Align(
           alignment: Alignment.centerLeft,
-          child: Text('💡毎日の積み重ねが、未来の自分をつくりますわっ！ 今日も本当におつかれさまでしたっ✨'),
+          child: Text('毎日の積み重ねが、未来の自分をつくりますわっ！ 今日も本当におつかれさまでしたっ。'),
         ),
       ],
     );
@@ -210,7 +210,11 @@ class _ReportHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          const Text('⚖️', style: TextStyle(fontSize: 34)),
+          const Icon(
+            Icons.monitor_weight_outlined,
+            color: Color(0xFF2563EB),
+            size: 42,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: FittedBox(
@@ -234,7 +238,7 @@ class _ReportHeader extends StatelessWidget {
                       ),
                     ),
                     const TextSpan(
-                      text: ' でしたわー!! ✨',
+                      text: ' でしたわー!!',
                       style: TextStyle(fontSize: 32),
                     ),
                   ],
@@ -259,12 +263,22 @@ class _RibbonTitle extends StatelessWidget {
         color: const Color(0xFFFF4081),
         borderRadius: BorderRadius.circular(2),
       ),
-      child: const Text(
-        '📋 直近７日間の体重記録',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.w900,
+      child: const FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.assignment, color: Colors.white, size: 28),
+            SizedBox(width: 8),
+            Text(
+              '直近７日間の体重記録',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -348,21 +362,24 @@ class _SummaryCards extends StatelessWidget {
         final narrow = constraints.maxWidth < 560;
         final cards = [
           _SummaryCard(
-            title: '🎯 目標体重',
+            icon: Icons.gps_fixed,
+            title: '目標体重',
             value: '75.0',
             unit: 'kg',
             footer: _remainingText(remaining),
             color: const Color(0xFFF50057),
           ),
           _SummaryCard(
-            title: '📈 過去７日平均',
+            icon: Icons.show_chart,
+            title: '過去７日平均',
             value: _formatNumber(sevenDayAverage),
             unit: 'kg',
             footer: _diffText('前日比', averageDiff),
             color: const Color(0xFF2563EB),
           ),
           _SummaryCard(
-            title: '🚩 目標まであと',
+            icon: Icons.flag,
+            title: '目標まであと',
             value: _formatNumber(remaining),
             unit: 'kg',
             footer: _diffText('前日比', previousDiff),
@@ -400,6 +417,7 @@ class _SummaryCards extends StatelessWidget {
 
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
+    required this.icon,
     required this.title,
     required this.value,
     required this.unit,
@@ -407,6 +425,7 @@ class _SummaryCard extends StatelessWidget {
     required this.color,
   });
 
+  final IconData icon;
   final String title;
   final String value;
   final String unit;
@@ -424,13 +443,20 @@ class _SummaryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: color,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           RichText(
@@ -515,7 +541,7 @@ class _ViewerMessagePanel extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '前日より ${_formatSigned(previousDiff)}kg、7日平均もチェックですの〜✨',
+                '前日より ${_formatSigned(previousDiff)}kg、7日平均もチェックですの〜',
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -530,7 +556,7 @@ class _ViewerMessagePanel extends StatelessWidget {
                 ),
               ),
               Text(
-                'この調子で、ゆるやかでも確実に減少傾向を続けていきますわ！\n焦らずコツコツが一番ですのっ♪\n一緒に目標の75kgまで、あと ${_formatNumber(remaining)}kg がんばりましょうねっ💪💕',
+                'この調子で、ゆるやかでも確実に減少傾向を続けていきますわ！\n焦らずコツコツが一番ですのっ♪\n一緒に目標の75kgまで、あと ${_formatNumber(remaining)}kg がんばりましょうねっ。',
                 style: const TextStyle(
                   fontSize: 17,
                   height: 1.75,
@@ -547,17 +573,19 @@ class _ViewerMessagePanel extends StatelessWidget {
             const Positioned(
               left: 6,
               top: 30,
-              child: Text(
-                '✦',
-                style: TextStyle(color: Color(0xFFFF8DB8), fontSize: 28),
+              child: Icon(
+                Icons.auto_awesome,
+                color: Color(0xFFFF8DB8),
+                size: 28,
               ),
             ),
             const Positioned(
               right: 2,
               top: 4,
-              child: Text(
-                '✦',
-                style: TextStyle(color: Color(0xFFFF8DB8), fontSize: 28),
+              child: Icon(
+                Icons.auto_awesome,
+                color: Color(0xFFFF8DB8),
+                size: 28,
               ),
             ),
             Image.asset(
