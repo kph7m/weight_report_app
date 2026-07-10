@@ -99,14 +99,13 @@ class _ReportBody extends StatelessWidget {
                         scale: scale,
                       ),
                       const SizedBox(height: 14),
+                      const Spacer(),
                       _CharacterMessageRow(
                         latestWeight: latestWeight,
                         previousDiff: previousDiff,
                         remaining: remaining,
                         scale: scale,
                       ),
-                      const Spacer(),
-                      _FooterMessage(scale: scale),
                     ],
                   ),
                 ),
@@ -690,50 +689,6 @@ class _MessageRichLine extends StatelessWidget {
           ),
           TextSpan(text: suffix),
         ],
-      ),
-    );
-  }
-}
-
-class _FooterMessage extends StatelessWidget {
-  const _FooterMessage({required this.scale});
-
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      alignment: Alignment.centerLeft,
-      widthFactor: 0.58,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 22 * scale,
-          vertical: 16 * scale,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12 * scale),
-          border: Border.all(
-            color: const Color(0xFFFF8DB8),
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.lightbulb, color: Colors.amber, size: 32 * scale),
-            SizedBox(width: 14 * scale),
-            Expanded(
-              child: Text(
-                '毎日の積み重ねが、未来の自分をつくりますわっ！\n今日も本当におつかれさまでしたっ。',
-                style: TextStyle(
-                  fontSize: 17 * scale,
-                  height: 1.6,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
