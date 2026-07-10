@@ -9,6 +9,7 @@ const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
 const _green = Color(0xFF168A2F);
 const _ink = Color(0xFF171717);
+const _reportCharacterScale = 1.8;
 
 class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
@@ -538,6 +539,7 @@ class _CharacterMessageRow extends StatelessWidget {
         Expanded(
           flex: 10,
           child: Stack(
+            clipBehavior: Clip.none,
             alignment: Alignment.bottomCenter,
             children: [
               Positioned(
@@ -552,11 +554,15 @@ class _CharacterMessageRow extends StatelessWidget {
               ),
               Padding(
                 padding: EdgeInsets.only(top: 12 * scale),
-                child: Image.asset(
-                  'assets/images/character_report.png',
-                  semanticLabel: 'レポート応援キャラクター',
-                  fit: BoxFit.contain,
-                  height: 500 * scale,
+                child: Transform.scale(
+                  scale: _reportCharacterScale,
+                  alignment: Alignment.bottomCenter,
+                  child: Image.asset(
+                    'assets/images/character_report.png',
+                    semanticLabel: 'レポート応援キャラクター',
+                    fit: BoxFit.contain,
+                    height: 500 * scale,
+                  ),
                 ),
               ),
             ],
