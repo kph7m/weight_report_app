@@ -518,56 +518,76 @@ class _CharacterMessageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 11,
-          child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final gap = 10 * scale;
+        final availableWidth = constraints.maxWidth - gap;
+        final messageWidth = availableWidth * 11 / 21;
+        final characterWidth = availableWidth * 10 / 21;
+
+        return SizedBox(
+          height: 500 * scale,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              _ViewerMessagePanel(
-                latestWeight: latestWeight,
-                previousDiff: previousDiff,
-                remaining: remaining,
-                scale: scale,
+              Positioned(
+                right: 0,
+                bottom: 0,
+                width: characterWidth,
+                height: 500 * scale,
+                child: _ReportCharacterArt(scale: scale),
+              ),
+              Positioned(
+                left: 0,
+                top: 0,
+                width: messageWidth,
+                child: _ViewerMessagePanel(
+                  latestWeight: latestWeight,
+                  previousDiff: previousDiff,
+                  remaining: remaining,
+                  scale: scale,
+                ),
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+class _ReportCharacterArt extends StatelessWidget {
+  const _ReportCharacterArt({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.bottomRight,
+      children: [
+        Positioned(
+          left: 2 * scale,
+          top: 50 * scale,
+          child: _Sparkle(scale: scale),
         ),
-        SizedBox(width: 10 * scale),
-        Expanded(
-          flex: 10,
-          child: SizedBox(
-            height: 500 * scale,
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.bottomRight,
-              children: [
-                Positioned(
-                  left: 2 * scale,
-                  top: 50 * scale,
-                  child: _Sparkle(scale: scale),
-                ),
-                Positioned(
-                  right: 8 * scale,
-                  top: 28 * scale,
-                  child: _Sparkle(scale: scale),
-                ),
-                Positioned(
-                  right: -50 * scale,
-                  bottom: 0,
-                  child: Transform.scale(
-                    scale: _reportCharacterScale,
-                    alignment: Alignment.bottomRight,
-                    child: Image.asset(
-                      'assets/images/character_report.png',
-                      semanticLabel: 'レポート応援キャラクター',
-                      fit: BoxFit.contain,
-                      height: 500 * scale,
-                    ),
-                  ),
-                ),
-              ],
+        Positioned(
+          right: 8 * scale,
+          top: 28 * scale,
+          child: _Sparkle(scale: scale),
+        ),
+        Positioned(
+          right: -50 * scale,
+          bottom: 0,
+          child: Transform.scale(
+            scale: _reportCharacterScale,
+            alignment: Alignment.bottomRight,
+            child: Image.asset(
+              'assets/images/character_report.png',
+              semanticLabel: 'レポート応援キャラクター',
+              fit: BoxFit.contain,
+              height: 500 * scale,
             ),
           ),
         ),
