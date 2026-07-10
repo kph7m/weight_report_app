@@ -13,6 +13,7 @@ const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
   'assets/images/character_pointing_input.png',
   'assets/images/character_high_touch.png',
+  'assets/images/character_report.png',
   'assets/images/character_celebration.png',
   'assets/images/cloud_top.png',
   'assets/images/cloud_bottom.png',
@@ -225,7 +226,7 @@ void main() {
     expect(find.bySemanticsLabel('レポート応援キャラクター'), findsOneWidget);
     expect(
       _assetNameForSemanticLabel(tester, 'レポート応援キャラクター'),
-      'assets/images/character_high_touch.png',
+      'assets/images/character_report.png',
     );
     expect(find.text('本日の\n体重'), findsOneWidget);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);

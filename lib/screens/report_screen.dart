@@ -553,7 +553,7 @@ class _CharacterMessageRow extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.only(top: 12 * scale),
                 child: Image.asset(
-                  'assets/images/character_high_touch.png',
+                  'assets/images/character_report.png',
                   semanticLabel: 'レポート応援キャラクター',
                   fit: BoxFit.contain,
                   height: 500 * scale,
