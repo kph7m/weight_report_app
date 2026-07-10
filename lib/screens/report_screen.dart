@@ -538,34 +538,38 @@ class _CharacterMessageRow extends StatelessWidget {
         SizedBox(width: 10 * scale),
         Expanded(
           flex: 10,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.bottomCenter,
-            children: [
-              Positioned(
-                left: 2 * scale,
-                top: 50 * scale,
-                child: _Sparkle(scale: scale),
-              ),
-              Positioned(
-                right: 8 * scale,
-                top: 28 * scale,
-                child: _Sparkle(scale: scale),
-              ),
-              Padding(
-                padding: EdgeInsets.only(top: 12 * scale),
-                child: Transform.scale(
-                  scale: _reportCharacterScale,
-                  alignment: Alignment.bottomCenter,
-                  child: Image.asset(
-                    'assets/images/character_report.png',
-                    semanticLabel: 'レポート応援キャラクター',
-                    fit: BoxFit.contain,
-                    height: 500 * scale,
+          child: SizedBox(
+            height: 500 * scale,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomRight,
+              children: [
+                Positioned(
+                  left: 2 * scale,
+                  top: 50 * scale,
+                  child: _Sparkle(scale: scale),
+                ),
+                Positioned(
+                  right: 8 * scale,
+                  top: 28 * scale,
+                  child: _Sparkle(scale: scale),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Transform.scale(
+                    scale: _reportCharacterScale,
+                    alignment: Alignment.bottomRight,
+                    child: Image.asset(
+                      'assets/images/character_report.png',
+                      semanticLabel: 'レポート応援キャラクター',
+                      fit: BoxFit.contain,
+                      height: 500 * scale,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
