@@ -85,8 +85,7 @@ class _ReportBody extends StatelessWidget {
                       _SevenDayTable(rows: rows, scale: scale),
                       const SizedBox(height: 14),
                       _SummaryCards(scale: scale),
-                      const SizedBox(height: 14),
-                      const Spacer(),
+                      const SizedBox(height: 10),
                       _CharacterMessageRow(
                         latestWeight: latestWeight,
                         previousDiff: previousDiff,
