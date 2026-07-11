@@ -7,7 +7,6 @@ import '../providers/weight_providers.dart';
 const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
-const _green = Color(0xFF168A2F);
 const _ink = Color(0xFF171717);
 const _reportCharacterScale = 1.8;
 
@@ -49,9 +48,6 @@ class _ReportBody extends StatelessWidget {
         ? null
         : latestWeight - previous.weightKg;
     final effectiveAverage = sevenDayAverage ?? latestWeight;
-    final remaining = latestWeight == null
-        ? null
-        : (latestWeight - targetWeightKg).clamp(0, double.infinity).toDouble();
     final rows = _recentRows(entries, effectiveAverage);
 
     return LayoutBuilder(
@@ -87,23 +83,13 @@ class _ReportBody extends StatelessWidget {
                       _RibbonTitle(scale: scale),
                       const SizedBox(height: 8),
                       _SevenDayTable(rows: rows, scale: scale),
-                      const SizedBox(height: 6),
-                      const Text(
-                        '※7日平均は、その日を含む過去7日間の平均体重です。',
-                        style: TextStyle(fontSize: 16),
-                      ),
                       const SizedBox(height: 14),
-                      _SummaryCards(
-                        remaining: remaining,
-                        previousDiff: previousDiff,
-                        scale: scale,
-                      ),
+                      _SummaryCards(scale: scale),
                       const SizedBox(height: 14),
                       const Spacer(),
                       _CharacterMessageRow(
                         latestWeight: latestWeight,
                         previousDiff: previousDiff,
-                        remaining: remaining,
                         scale: scale,
                       ),
                     ],
@@ -355,14 +341,8 @@ class _SevenDayTable extends StatelessWidget {
 }
 
 class _SummaryCards extends StatelessWidget {
-  const _SummaryCards({
-    required this.remaining,
-    required this.previousDiff,
-    required this.scale,
-  });
+  const _SummaryCards({required this.scale});
 
-  final double? remaining;
-  final double? previousDiff;
   final double scale;
 
   @override
@@ -373,17 +353,8 @@ class _SummaryCards extends StatelessWidget {
         title: '目標体重',
         value: '75.0',
         unit: 'kg',
-        footer: '目標まであと\n${_formatNumber(remaining)}kg',
+        footer: '75kgを目指して進行中です',
         color: _deepPink,
-        scale: scale,
-      ),
-      _SummaryCard(
-        icon: Icons.flag,
-        title: '目標まであと',
-        value: _formatNumber(remaining),
-        unit: 'kg',
-        footer: '前日比 ${_formatSigned(previousDiff)}kg ▼',
-        color: _green,
         scale: scale,
       ),
     ];
@@ -391,19 +362,11 @@ class _SummaryCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 560) {
-          return Column(
-            children: [
-              cards[0],
-              SizedBox(height: 10 * scale),
-              cards[1],
-            ],
-          );
+          return Column(children: [cards[0]]);
         }
         return Row(
           children: [
             Expanded(child: cards[0]),
-            SizedBox(width: 12 * scale),
-            Expanded(child: cards[1]),
             const Spacer(),
           ],
         );
@@ -507,13 +470,11 @@ class _CharacterMessageRow extends StatelessWidget {
   const _CharacterMessageRow({
     required this.latestWeight,
     required this.previousDiff,
-    required this.remaining,
     required this.scale,
   });
 
   final double? latestWeight;
   final double? previousDiff;
-  final double? remaining;
   final double scale;
 
   @override
@@ -544,7 +505,6 @@ class _CharacterMessageRow extends StatelessWidget {
                 child: _ViewerMessagePanel(
                   latestWeight: latestWeight,
                   previousDiff: previousDiff,
-                  remaining: remaining,
                   scale: scale,
                 ),
               ),
@@ -600,13 +560,11 @@ class _ViewerMessagePanel extends StatelessWidget {
   const _ViewerMessagePanel({
     required this.latestWeight,
     required this.previousDiff,
-    required this.remaining,
     required this.scale,
   });
 
   final double? latestWeight;
   final double? previousDiff;
-  final double? remaining;
   final double scale;
 
   @override
