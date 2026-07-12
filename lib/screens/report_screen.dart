@@ -553,7 +553,7 @@ class _ReportCharacterArt extends StatelessWidget {
           child: _Sparkle(scale: scale),
         ),
         Positioned(
-          right: 0,
+          right: -50 * scale,
           bottom: 0,
           child: Transform.scale(
             scale: _reportCharacterScale,
