@@ -7,7 +7,6 @@ import '../providers/weight_providers.dart';
 const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
-const _green = Color(0xFF168A2F);
 const _ink = Color(0xFF171717);
 const _reportCharacterScale = 1.8;
 
@@ -88,11 +87,7 @@ class _ReportBody extends StatelessWidget {
                       const SizedBox(height: 8),
                       _SevenDayTable(rows: rows, scale: scale),
                       const SizedBox(height: 20),
-                      _SummaryCards(
-                        remaining: remaining,
-                        previousDiff: previousDiff,
-                        scale: scale,
-                      ),
+                      _SummaryCards(remaining: remaining, scale: scale),
                       const SizedBox(height: 18),
                       _CharacterMessageRow(
                         latestWeight: latestWeight,
@@ -350,14 +345,9 @@ class _SevenDayTable extends StatelessWidget {
 }
 
 class _SummaryCards extends StatelessWidget {
-  const _SummaryCards({
-    required this.remaining,
-    required this.previousDiff,
-    required this.scale,
-  });
+  const _SummaryCards({required this.remaining, required this.scale});
 
   final double? remaining;
-  final double? previousDiff;
   final double scale;
 
   @override
@@ -372,33 +362,16 @@ class _SummaryCards extends StatelessWidget {
         color: _deepPink,
         scale: scale,
       ),
-      _SummaryCard(
-        icon: Icons.flag,
-        title: '目標まであと',
-        value: _formatNumber(remaining),
-        unit: 'kg',
-        footer: '前日比 ${_formatSigned(previousDiff)}kg ▼',
-        color: _green,
-        scale: scale,
-      ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 560) {
-          return Column(
-            children: [
-              cards[0],
-              SizedBox(height: 10 * scale),
-              cards[1],
-            ],
-          );
+          return Column(children: [cards[0]]);
         }
         return Row(
           children: [
             Expanded(child: cards[0]),
-            SizedBox(width: 12 * scale),
-            Expanded(child: cards[1]),
             const Spacer(),
           ],
         );

@@ -232,7 +232,7 @@ void main() {
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.text('視聴者さん♪'), findsOneWidget);
     expect(find.textContaining('毎日の積み重ねが'), findsOneWidget);
-    expect(find.textContaining('目標まであと'), findsNWidgets(2));
+    expect(find.textContaining('目標まであと'), findsOneWidget);
     expect(find.textContaining('※7日平均は'), findsNothing);
     expect(find.byType(SingleChildScrollView), findsNothing);
     await expectLater(
