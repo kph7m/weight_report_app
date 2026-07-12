@@ -71,31 +71,45 @@ class _ReportBody extends StatelessWidget {
                     fontFamily: 'Noto Sans JP',
                     fontWeight: FontWeight.w700,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      _ReportHeroHeader(latest: latest, scale: scale),
-                      const SizedBox(height: 8),
-                      Center(
-                        child: _MeasuredDateBadge(
-                          date: latest?.date ?? DateTime.now(),
-                          scale: scale,
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        width: 420 * scale,
+                        height: 500 * scale,
+                        child: _ReportCharacterArt(scale: scale),
+                      ),
+                      Positioned.fill(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _ReportHeroHeader(latest: latest, scale: scale),
+                            const SizedBox(height: 8),
+                            Center(
+                              child: _MeasuredDateBadge(
+                                date: latest?.date ?? DateTime.now(),
+                                scale: scale,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _RibbonTitle(scale: scale),
+                            const SizedBox(height: 8),
+                            _SevenDayTable(rows: rows, scale: scale),
+                            const SizedBox(height: 20),
+                            _SummaryCards(remaining: remaining, scale: scale),
+                            const SizedBox(height: 18),
+                            _CharacterMessageRow(
+                              latestWeight: latestWeight,
+                              previousDiff: previousDiff,
+                              scale: scale,
+                            ),
+                            const SizedBox(height: 18),
+                            _FooterMessage(scale: scale),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      _RibbonTitle(scale: scale),
-                      const SizedBox(height: 8),
-                      _SevenDayTable(rows: rows, scale: scale),
-                      const SizedBox(height: 20),
-                      _SummaryCards(remaining: remaining, scale: scale),
-                      const SizedBox(height: 18),
-                      _CharacterMessageRow(
-                        latestWeight: latestWeight,
-                        previousDiff: previousDiff,
-                        scale: scale,
-                      ),
-                      const SizedBox(height: 18),
-                      _FooterMessage(scale: scale),
                     ],
                   ),
                 ),
@@ -486,34 +500,20 @@ class _CharacterMessageRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final gap = 10 * scale;
-        final availableWidth = constraints.maxWidth - gap;
-        final messageWidth = availableWidth * 11 / 21;
-        final characterWidth = availableWidth * 10 / 21;
+        final messageWidth = constraints.maxWidth * 0.52;
 
         return SizedBox(
           height: 500 * scale,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                right: 0,
-                bottom: 0,
-                width: characterWidth,
-                height: 500 * scale,
-                child: _ReportCharacterArt(scale: scale),
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: messageWidth,
+              child: _ViewerMessagePanel(
+                latestWeight: latestWeight,
+                previousDiff: previousDiff,
+                scale: scale,
               ),
-              Positioned(
-                left: 0,
-                top: 0,
-                width: messageWidth,
-                child: _ViewerMessagePanel(
-                  latestWeight: latestWeight,
-                  previousDiff: previousDiff,
-                  scale: scale,
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -543,7 +543,7 @@ class _ReportCharacterArt extends StatelessWidget {
           child: _Sparkle(scale: scale),
         ),
         Positioned(
-          right: -50 * scale,
+          right: 0,
           bottom: 0,
           child: Transform.scale(
             scale: _reportCharacterScale,
