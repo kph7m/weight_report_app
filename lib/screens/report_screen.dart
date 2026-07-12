@@ -590,7 +590,7 @@ class _ViewerMessagePanel extends StatelessWidget {
         30 * scale,
         22 * scale,
         24 * scale,
-        22 * scale,
+        72 * scale,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
