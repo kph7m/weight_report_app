@@ -8,7 +8,7 @@ const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
 const _ink = Color(0xFF171717);
-const _reportCharacterScale = 1.5;
+const _reportCharacterScale = 1.7;
 
 class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
