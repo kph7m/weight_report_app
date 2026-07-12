@@ -18,9 +18,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _characterPointingInput =
       'assets/images/character_pointing_input.png';
-  static const _characterHighTouch = 'assets/images/character_high_touch.png';
-  static const _characterCelebration =
-      'assets/images/character_celebration.png';
+  static const _characterThinking = 'assets/images/character_thinking.png';
   static const _cloudTop = 'assets/images/cloud_top.png';
   static const _cloudBottom = 'assets/images/cloud_bottom.png';
 
@@ -47,8 +45,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     _didPrecacheImages = true;
     precacheImage(const AssetImage(_characterPointingInput), context);
-    precacheImage(const AssetImage(_characterHighTouch), context);
-    precacheImage(const AssetImage(_characterCelebration), context);
+    precacheImage(const AssetImage(_characterThinking), context);
   }
 
   @override
@@ -74,9 +71,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _isWeightInputComplete = isComplete;
       if (!isComplete) _isCelebrating = false;
     });
+
+    if (isComplete) {
+      _saveWeightAndOpenReport();
+    }
   }
 
-  Future<void> _handleHighTouch() async {
+  Future<void> _saveWeightAndOpenReport() async {
     if (_isSavingWeight || !_isWeightInputComplete || _isCelebrating) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -95,7 +96,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _isCelebrating = true;
       });
-      await Future<void>.delayed(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(seconds: 3));
       if (!mounted) return;
 
       Navigator.of(
@@ -121,8 +122,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   String get _characterAsset {
-    if (_isCelebrating) return _characterCelebration;
-    if (_isWeightInputComplete) return _characterHighTouch;
+    if (_isCelebrating) return _characterThinking;
+    if (_isWeightInputComplete) return _characterThinking;
     return _characterPointingInput;
   }
 
@@ -142,11 +143,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   controller: _controller,
                   focusNode: _focusNode,
                   characterAsset: _characterAsset,
-                  isHighTouchEnabled:
-                      _isWeightInputComplete &&
-                      !_isCelebrating &&
-                      !_isSavingWeight,
-                  onHighTouch: _handleHighTouch,
                   cloudTopAsset: _cloudTop,
                   cloudBottomAsset: _cloudBottom,
                 ),
@@ -168,8 +164,6 @@ class _WeightInputHero extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.characterAsset,
-    required this.isHighTouchEnabled,
-    required this.onHighTouch,
     required this.cloudTopAsset,
     required this.cloudBottomAsset,
   });
@@ -178,8 +172,6 @@ class _WeightInputHero extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final String characterAsset;
-  final bool isHighTouchEnabled;
-  final VoidCallback onHighTouch;
   final String cloudTopAsset;
   final String cloudBottomAsset;
 
@@ -270,57 +262,6 @@ class _WeightInputHero extends StatelessWidget {
                                   fit: BoxFit.contain,
                                   semanticLabel: '体重入力キャラクター',
                                 ),
-                                if (isHighTouchEnabled)
-                                  Positioned.fill(
-                                    child: LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final cellHeight =
-                                            constraints.maxHeight / 3;
-
-                                        return Stack(
-                                          children: [
-                                            Positioned(
-                                              left: 0,
-                                              top: cellHeight - 30,
-                                              width: constraints.maxWidth / 2,
-                                              height: cellHeight + 30,
-                                              child: Semantics(
-                                                button: true,
-                                                label: 'ハイタッチ',
-                                                child: GestureDetector(
-                                                  behavior:
-                                                      HitTestBehavior.opaque,
-                                                  onTap: onHighTouch,
-                                                  child: IgnorePointer(
-                                                    child: DecoratedBox(
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            const Color(
-                                                              0xFF48B7FF,
-                                                            ).withValues(
-                                                              alpha: 0.18,
-                                                            ),
-                                                        border: Border.all(
-                                                          color: const Color(
-                                                            0xFF0B8FE8,
-                                                          ),
-                                                          width: 3,
-                                                        ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              28,
-                                                            ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ),
                               ],
                             ),
                           ),
