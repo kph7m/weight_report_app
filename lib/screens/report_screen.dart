@@ -74,13 +74,6 @@ class _ReportBody extends StatelessWidget {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        width: 420 * scale,
-                        height: 500 * scale,
-                        child: _ReportCharacterArt(scale: scale),
-                      ),
                       Positioned.fill(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,15 +91,12 @@ class _ReportBody extends StatelessWidget {
                             const SizedBox(height: 8),
                             _SevenDayTable(rows: rows, scale: scale),
                             const SizedBox(height: 20),
-                            _SummaryCards(remaining: remaining, scale: scale),
-                            const SizedBox(height: 18),
-                            _CharacterMessageRow(
+                            _LayeredReportBottomSection(
+                              remaining: remaining,
                               latestWeight: latestWeight,
                               previousDiff: previousDiff,
                               scale: scale,
                             ),
-                            const SizedBox(height: 18),
-                            _FooterMessage(scale: scale),
                           ],
                         ),
                       ),
@@ -485,13 +475,15 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _CharacterMessageRow extends StatelessWidget {
-  const _CharacterMessageRow({
+class _LayeredReportBottomSection extends StatelessWidget {
+  const _LayeredReportBottomSection({
+    required this.remaining,
     required this.latestWeight,
     required this.previousDiff,
     required this.scale,
   });
 
+  final double? remaining;
   final double? latestWeight;
   final double? previousDiff;
   final double scale;
@@ -501,19 +493,43 @@ class _CharacterMessageRow extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final messageWidth = constraints.maxWidth * 0.52;
+        final cardWidth = constraints.maxWidth * 0.52;
 
         return SizedBox(
-          height: 500 * scale,
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: messageWidth,
-              child: _ViewerMessagePanel(
-                latestWeight: latestWeight,
-                previousDiff: previousDiff,
-                scale: scale,
+          height: 760 * scale,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                width: cardWidth,
+                child: _SummaryCards(remaining: remaining, scale: scale),
               ),
-            ),
+              Positioned(
+                left: 0,
+                bottom: 0,
+                width: constraints.maxWidth * 0.58,
+                child: _FooterMessage(scale: scale),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                width: 420 * scale,
+                height: 500 * scale,
+                child: _ReportCharacterArt(scale: scale),
+              ),
+              Positioned(
+                left: 0,
+                top: 244 * scale,
+                width: messageWidth,
+                child: _ViewerMessagePanel(
+                  latestWeight: latestWeight,
+                  previousDiff: previousDiff,
+                  scale: scale,
+                ),
+              ),
+            ],
           ),
         );
       },
