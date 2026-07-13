@@ -12,8 +12,8 @@ import 'package:weight_report_app/screens/report_screen.dart';
 const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
   'assets/images/character_pointing_input.png',
-  'assets/images/character_high_touch.png',
-  'assets/images/character_celebration.png',
+  'assets/images/character_thinking.png',
+  'assets/images/character_report.png',
   'assets/images/cloud_top.png',
   'assets/images/cloud_bottom.png',
 ];
@@ -45,13 +45,16 @@ Future<void> _pumpHomeScreen(
 }
 
 String? _assetNameForSemanticLabel(WidgetTester tester, String semanticLabel) {
-  final image = tester.widget<Image>(
+  final images = tester.widgetList<Image>(
     find.byWidgetPredicate(
       (widget) => widget is Image && widget.semanticLabel == semanticLabel,
     ),
   );
-  final provider = image.image;
-  return provider is AssetImage ? provider.assetName : null;
+  for (final image in images.toList().reversed) {
+    final provider = image.image;
+    if (provider is AssetImage) return provider.assetName;
+  }
+  return null;
 }
 
 class _FakeWeightRepository implements WeightRepository {
@@ -104,13 +107,15 @@ void main() {
     );
   });
 
-  testWidgets('shows high touch character after weight input reaches 30.0', (
+  testWidgets('shows thinking character after weight input reaches 30.0', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await _pumpHomeScreen(tester);
+    final repository = _FakeWeightRepository();
+
+    await _pumpHomeScreen(tester, repository: repository);
     expect(
       _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
       'assets/images/character_pointing_input.png',
@@ -131,14 +136,12 @@ void main() {
     );
 
     tester.binding.focusManager.primaryFocus?.unfocus();
-    await tester.pumpAndSettle();
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(seconds: 1));
-    });
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(repository.savedWeights, [30.0]);
     expect(
       _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
-      'assets/images/character_high_touch.png',
+      'assets/images/character_thinking.png',
     );
     final characterRenderImages = tester.renderObjectList<RenderImage>(
       find.descendant(
@@ -148,15 +151,15 @@ void main() {
         matching: find.byType(RawImage),
       ),
     );
-    expect(characterRenderImages.single.image, isNotNull);
-    await expectLater(
-      find.byType(HomeScreen),
-      matchesGoldenFile('../docs/screenshots/home-screen-high-touch.png'),
-    );
+    expect(characterRenderImages.last.image, isNotNull);
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.byType(ReportScreen), findsOneWidget);
   });
 
   testWidgets(
-    'saves weight and shows celebration after tapping high-touch character',
+    'saves weight, shows thinking character, then opens report screen',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -165,30 +168,26 @@ void main() {
       await _pumpHomeScreen(tester, repository: repository);
       await tester.enterText(find.byType(TextFormField), '77.7');
       tester.binding.focusManager.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.bySemanticsLabel('ハイタッチ'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(repository.savedWeights, [77.7]);
       expect(
         _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
-        'assets/images/character_celebration.png',
+        'assets/images/character_thinking.png',
       );
       await expectLater(
         find.byType(HomeScreen),
-        matchesGoldenFile('../docs/screenshots/home-screen-celebration.png'),
+        matchesGoldenFile('../docs/screenshots/home-screen-thinking.png'),
       );
 
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
       expect(find.byType(ReportScreen), findsOneWidget);
     },
   );
 
-  testWidgets('renders report screen with high-touch character', (
-    tester,
-  ) async {
+  testWidgets('renders report screen with report character', (tester) async {
     await tester.binding.setSurfaceSize(const Size(922, 1706));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final entries = [
@@ -225,18 +224,22 @@ void main() {
     expect(find.bySemanticsLabel('レポート応援キャラクター'), findsOneWidget);
     expect(
       _assetNameForSemanticLabel(tester, 'レポート応援キャラクター'),
-      'assets/images/character_high_touch.png',
+      'assets/images/character_report.png',
     );
     expect(find.text('本日の\n体重'), findsOneWidget);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.text('視聴者さん♪'), findsOneWidget);
+    expect(find.textContaining('毎日の積み重ねが'), findsNothing);
+    expect(find.textContaining('目標まであと'), findsOneWidget);
+    expect(find.textContaining('※7日平均は'), findsNothing);
+    expect(find.byType(SingleChildScrollView), findsNothing);
     await expectLater(
       find.byType(ReportScreen),
       matchesGoldenFile('../docs/screenshots/report-screen.png'),
     );
   });
 
-  testWidgets('shows an error dialog when high-touch save fails', (
+  testWidgets('shows an error dialog when automatic save fails', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -246,9 +249,7 @@ void main() {
     await _pumpHomeScreen(tester, repository: repository);
     await tester.enterText(find.byType(TextFormField), '77.7');
     tester.binding.focusManager.primaryFocus?.unfocus();
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.bySemanticsLabel('ハイタッチ'));
+    await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('エラーが発生しました'), findsOneWidget);
