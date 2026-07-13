@@ -25,15 +25,36 @@ jobs:
           cache: true
 
       - name: Restore Android release signing files
+        id: android_signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
-          test -n "$ANDROID_KEYSTORE_BASE64"
-          test -n "$ANDROID_KEY_PROPERTIES"
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
-          printf '%s' "$ANDROID_KEY_PROPERTIES" > android/key.properties
-          chmod 600 android/upload-keystore.jks android/key.properties
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEY_PROPERTIES" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+            printf '%s' "$ANDROID_KEY_PROPERTIES" > android/key.properties
+            chmod 600 android/upload-keystore.jks android/key.properties
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 or ANDROID_KEY_PROPERTIES is not set. A temporary CI-only keystore will be used and Firebase distribution will be skipped."
+            keytool -genkeypair -v \
+              -keystore android/upload-keystore.jks \
+              -storetype JKS \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 1 \
+              -alias temporary \
+              -storepass temporary \
+              -keypass temporary \
+              -dname "CN=Temporary CI, OU=CI, O=WeightReport, L=CI, S=CI, C=US"
+            printf '%s\n' \
+              'storePassword=temporary' \
+              'keyPassword=temporary' \
+              'keyAlias=temporary' \
+              'storeFile=upload-keystore.jks' > android/key.properties
+            chmod 600 android/upload-keystore.jks android/key.properties
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install dependencies
         run: flutter pub get
@@ -59,14 +80,17 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Write Firebase service account key
+        if: steps.android_signing.outputs.available == 'true'
         env:
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
         run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT_KEY" > "$RUNNER_TEMP/firebase-service-account.json"
 
       - name: Setup Firebase CLI
+        if: steps.android_signing.outputs.available == 'true'
         run: npm install --global firebase-tools
 
       - name: Upload to Firebase App Distribution
+        if: steps.android_signing.outputs.available == 'true'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
