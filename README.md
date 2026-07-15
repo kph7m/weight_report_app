@@ -52,8 +52,6 @@ storeFile=upload-keystore.jks
 
 `android/key.properties` と `android/upload-keystore.jks` は秘密情報のためGitにコミットしません。
 
-GitHub Actionsでは、これらのSecretsが未登録の場合は一時的なCI専用keystoreでRelease APKのビルド確認だけ行い、Firebase App Distributionへのアップロードはスキップします。実配布する前に必ず登録してください。
-
 ### GitHub Secrets登録方法
 
 GitHub repositoryの **Settings > Secrets and variables > Actions** に以下を登録します。
