@@ -29,8 +29,10 @@ jobs:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
-          test -n "$ANDROID_KEYSTORE_BASE64"
-          test -n "$ANDROID_KEY_PROPERTIES"
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEY_PROPERTIES" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 and ANDROID_KEY_PROPERTIES must be registered as repository secrets."
+            exit 1
+          fi
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
           printf '%s' "$ANDROID_KEY_PROPERTIES" > android/key.properties
           chmod 600 android/upload-keystore.jks android/key.properties
