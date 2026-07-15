@@ -24,20 +24,41 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Restore Android release signing files
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEY_PROPERTIES" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 and ANDROID_KEY_PROPERTIES must be registered as repository secrets."
+            exit 1
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          printf '%s' "$ANDROID_KEY_PROPERTIES" > android/key.properties
+          chmod 600 android/upload-keystore.jks android/key.properties
+
       - name: Install dependencies
         run: flutter pub get
 
       - name: Run tests
         run: flutter test
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Confirm Flutter version code
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml)
+          VERSION_CODE=${VERSION_LINE##*+}
+          test "$VERSION_CODE" != "$VERSION_LINE"
+          echo "Flutter pubspec version is ${VERSION_LINE#version: }"
+          echo "Android versionCode will use pubspec +${VERSION_CODE} via flutter.versionCode"
+
+      - name: Build release APK
+        run: flutter build apk --release
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: weight-report-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Write Firebase service account key
         env:
@@ -52,7 +73,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
         run: |
-          firebase appdistribution:distribute build/app/outputs/flutter-apk/app-debug.apk \
+          firebase appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
             --app "$FIREBASE_APP_ID" \
             --groups "testers" \
-            --release-notes "GitHub Actions debug build from $GITHUB_SHA"
+            --release-notes "GitHub Actions release build from $GITHUB_SHA"

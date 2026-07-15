@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/weight_providers.dart';
+import '../services/app_error_handler.dart';
+import 'report_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -15,23 +18,113 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _characterPointingInput =
       'assets/images/character_pointing_input.png';
+  static const _characterThinking = 'assets/images/character_thinking.png';
   static const _cloudTop = 'assets/images/cloud_top.png';
   static const _cloudBottom = 'assets/images/cloud_bottom.png';
 
   final _controller = TextEditingController(text: '00.0');
   final _formKey = GlobalKey<FormState>();
   final _focusNode = FocusNode();
+  bool _isWeightInputComplete = false;
+  bool _isCelebrating = false;
+  bool _isSavingWeight = false;
+  bool _didPrecacheImages = false;
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_updateWeightInputState);
+    _focusNode.addListener(_updateWeightInputState);
+    _updateWeightInputState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didPrecacheImages) return;
+
+    _didPrecacheImages = true;
+    precacheImage(const AssetImage(_characterPointingInput), context);
+    precacheImage(const AssetImage(_characterThinking), context);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_updateWeightInputState);
+    _focusNode.removeListener(_updateWeightInputState);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _updateWeightInputState() {
+    final input = _controller.text;
+    final weight = double.tryParse(input);
+    final isComplete =
+        !_focusNode.hasFocus &&
+        weight != null &&
+        weight >= 30.0 &&
+        RegExp(r'^\d{1,3}\.\d$').hasMatch(input);
+    if (isComplete == _isWeightInputComplete) return;
+
+    setState(() {
+      _isWeightInputComplete = isComplete;
+      if (!isComplete) _isCelebrating = false;
+    });
+
+    if (isComplete) {
+      _saveWeightAndOpenReport();
+    }
+  }
+
+  Future<void> _saveWeightAndOpenReport() async {
+    if (_isSavingWeight || !_isWeightInputComplete || _isCelebrating) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final weight = double.tryParse(_controller.text);
+    if (weight == null) return;
+
+    setState(() {
+      _isSavingWeight = true;
+    });
+
+    try {
+      final repository = await ref.read(weightRepositoryProvider.future);
+      await repository.saveToday(weight);
+      if (!mounted) return;
+
+      setState(() {
+        _isCelebrating = true;
+      });
+      await Future<void>.delayed(const Duration(seconds: 3));
+      if (!mounted) return;
+
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const ReportScreen()));
+    } catch (error, stackTrace) {
+      if (mounted) {
+        await AppErrorHandler.showErrorDialogForContext(
+          context,
+          error,
+          stackTrace,
+        );
+      } else {
+        AppErrorHandler.report(error, stackTrace);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingWeight = false;
+        });
+      }
+    }
+  }
+
+  String get _characterAsset {
+    if (_isCelebrating) return _characterThinking;
+    if (_isWeightInputComplete) return _characterThinking;
+    return _characterPointingInput;
   }
 
   @override
@@ -49,7 +142,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   formKey: _formKey,
                   controller: _controller,
                   focusNode: _focusNode,
-                  characterAsset: _characterPointingInput,
+                  characterAsset: _characterAsset,
                   cloudTopAsset: _cloudTop,
                   cloudBottomAsset: _cloudBottom,
                 ),
@@ -159,12 +252,17 @@ class _WeightInputHero extends StatelessWidget {
                           bottom: 92,
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 280),
-                            child: Image.asset(
-                              characterAsset,
+                            child: Stack(
                               key: ValueKey(characterAsset),
-                              height: 470,
-                              fit: BoxFit.contain,
-                              semanticLabel: '体重入力キャラクター',
+                              alignment: Alignment.center,
+                              children: [
+                                Image.asset(
+                                  characterAsset,
+                                  height: 470,
+                                  fit: BoxFit.contain,
+                                  semanticLabel: '体重入力キャラクター',
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -234,6 +332,7 @@ class _WeightDisplayCard extends StatelessWidget {
           focusNode: focusNode,
           textAlign: TextAlign.center,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: const [_WeightInputFormatter()],
           style: Theme.of(context).textTheme.displayLarge?.copyWith(
             color: const Color(0xFF202633),
             fontWeight: FontWeight.w800,
@@ -257,13 +356,40 @@ class _WeightDisplayCard extends StatelessWidget {
             focusedErrorBorder: inputBorder(colorScheme.error),
           ),
           validator: (value) {
-            final weight = double.tryParse(value ?? '');
-            if (weight == null || weight <= 0) return '有効な体重を入力してください';
+            final input = value ?? '';
+            final weight = double.tryParse(input);
+            if (weight == null) return '数値で入力してください';
+            if (!RegExp(r'^\d{1,3}(\.\d)?$').hasMatch(input)) {
+              return '小数点第1位まで入力してください';
+            }
+            if (weight > 999.9) return '999.9以下で入力してください';
+            if (weight <= 0) return '有効な体重を入力してください';
             return null;
           },
         ),
       ),
     );
+  }
+}
+
+class _WeightInputFormatter extends TextInputFormatter {
+  const _WeightInputFormatter();
+
+  static final _allowedPattern = RegExp(r'^(\d{0,3}|\d{1,3}\.\d?)$');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if (text.isEmpty) return newValue;
+    if (!_allowedPattern.hasMatch(text)) return oldValue;
+
+    final weight = double.tryParse(text);
+    if (weight != null && weight > 999.9) return oldValue;
+
+    return newValue;
   }
 }
 
