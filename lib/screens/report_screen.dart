@@ -16,14 +16,11 @@ class ReportScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(weightEntriesProvider);
-    final average = ref.watch(sevenDayAverageProvider);
-
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFD),
       body: SafeArea(
         child: entriesAsync.when(
-          data: (entries) =>
-              _ReportBody(entries: entries, sevenDayAverage: average),
+          data: (entries) => _ReportBody(entries: entries),
           error: (error, stackTrace) =>
               Center(child: Text('読み込みに失敗しました: $error')),
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -34,10 +31,9 @@ class ReportScreen extends ConsumerWidget {
 }
 
 class _ReportBody extends StatelessWidget {
-  const _ReportBody({required this.entries, required this.sevenDayAverage});
+  const _ReportBody({required this.entries});
 
   final List<WeightEntry> entries;
-  final double? sevenDayAverage;
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +43,10 @@ class _ReportBody extends StatelessWidget {
     final previousDiff = latestWeight == null || previous == null
         ? null
         : latestWeight - previous.weightKg;
-    final effectiveAverage = sevenDayAverage ?? latestWeight;
     final remaining = latestWeight == null
         ? null
         : (latestWeight - targetWeightKg).clamp(0, double.infinity).toDouble();
-    final rows = _recentRows(entries, effectiveAverage);
+    final rows = _recentRows(entries);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -111,10 +106,7 @@ class _ReportBody extends StatelessWidget {
     );
   }
 
-  List<_ReportRowData> _recentRows(
-    List<WeightEntry> source,
-    double? fallbackAverage,
-  ) {
+  List<_ReportRowData> _recentRows(List<WeightEntry> source) {
     final sorted = [...source]..sort((a, b) => b.date.compareTo(a.date));
     return List.generate(7, (index) {
       if (index >= sorted.length) return _ReportRowData.empty();
@@ -124,11 +116,32 @@ class _ReportBody extends StatelessWidget {
         date: entry.date,
         weight: entry.weightKg,
         diff: previous == null ? null : entry.weightKg - previous.weightKg,
-        average: fallbackAverage,
+        average: rollingSevenDayAverage(sorted, index),
       );
     });
   }
 }
+
+double? rollingSevenDayAverage(List<WeightEntry> sortedEntries, int index) {
+  if (index < 0 || index >= sortedEntries.length) return null;
+
+  final entryDate = _dateOnly(sortedEntries[index].date);
+  final windowStart = entryDate.subtract(const Duration(days: 6));
+  final windowEntries = sortedEntries.where((entry) {
+    final date = _dateOnly(entry.date);
+    return !date.isBefore(windowStart) && !date.isAfter(entryDate);
+  }).toList();
+
+  if (windowEntries.isEmpty) return null;
+
+  final total = windowEntries.fold<double>(
+    0,
+    (sum, entry) => sum + entry.weightKg,
+  );
+  return total / windowEntries.length;
+}
+
+DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
 class _ReportHeroHeader extends StatelessWidget {
   const _ReportHeroHeader({required this.latest, required this.scale});
