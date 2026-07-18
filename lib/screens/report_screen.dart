@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/weight_entry.dart';
 import '../providers/weight_providers.dart';
+import 'home_screen.dart';
 
 const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
 const _ink = Color(0xFF171717);
 const _reportCharacterScale = 1.7;
+const _weightInputIconAsset = 'assets/images/weight_input_icon.png';
 
 class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
@@ -16,14 +18,11 @@ class ReportScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(weightEntriesProvider);
-    final average = ref.watch(sevenDayAverageProvider);
-
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFD),
       body: SafeArea(
         child: entriesAsync.when(
-          data: (entries) =>
-              _ReportBody(entries: entries, sevenDayAverage: average),
+          data: (entries) => _ReportBody(entries: entries),
           error: (error, stackTrace) =>
               Center(child: Text('読み込みに失敗しました: $error')),
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -34,10 +33,9 @@ class ReportScreen extends ConsumerWidget {
 }
 
 class _ReportBody extends StatelessWidget {
-  const _ReportBody({required this.entries, required this.sevenDayAverage});
+  const _ReportBody({required this.entries});
 
   final List<WeightEntry> entries;
-  final double? sevenDayAverage;
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +45,10 @@ class _ReportBody extends StatelessWidget {
     final previousDiff = latestWeight == null || previous == null
         ? null
         : latestWeight - previous.weightKg;
-    final effectiveAverage = sevenDayAverage ?? latestWeight;
     final remaining = latestWeight == null
         ? null
         : (latestWeight - targetWeightKg).clamp(0, double.infinity).toDouble();
-    final rows = _recentRows(entries, effectiveAverage);
+    final rows = _recentRows(entries);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -80,14 +77,10 @@ class _ReportBody extends StatelessWidget {
                           children: [
                             _ReportHeroHeader(latest: latest, scale: scale),
                             const SizedBox(height: 8),
-                            Center(
-                              child: _MeasuredDateBadge(
-                                date: latest?.date ?? DateTime.now(),
-                                scale: scale,
-                              ),
+                            _ReportTitleArea(
+                              date: latest?.date ?? DateTime.now(),
+                              scale: scale,
                             ),
-                            const SizedBox(height: 12),
-                            _RibbonTitle(scale: scale),
                             const SizedBox(height: 8),
                             _SevenDayTable(rows: rows, scale: scale),
                             const SizedBox(height: 20),
@@ -111,10 +104,7 @@ class _ReportBody extends StatelessWidget {
     );
   }
 
-  List<_ReportRowData> _recentRows(
-    List<WeightEntry> source,
-    double? fallbackAverage,
-  ) {
+  List<_ReportRowData> _recentRows(List<WeightEntry> source) {
     final sorted = [...source]..sort((a, b) => b.date.compareTo(a.date));
     return List.generate(7, (index) {
       if (index >= sorted.length) return _ReportRowData.empty();
@@ -124,11 +114,32 @@ class _ReportBody extends StatelessWidget {
         date: entry.date,
         weight: entry.weightKg,
         diff: previous == null ? null : entry.weightKg - previous.weightKg,
-        average: fallbackAverage,
+        average: rollingSevenDayAverage(sorted, index),
       );
     });
   }
 }
+
+double? rollingSevenDayAverage(List<WeightEntry> sortedEntries, int index) {
+  if (index < 0 || index >= sortedEntries.length) return null;
+
+  final entryDate = _dateOnly(sortedEntries[index].date);
+  final windowStart = entryDate.subtract(const Duration(days: 6));
+  final windowEntries = sortedEntries.where((entry) {
+    final date = _dateOnly(entry.date);
+    return !date.isBefore(windowStart) && !date.isAfter(entryDate);
+  }).toList();
+
+  if (windowEntries.isEmpty) return null;
+
+  final total = windowEntries.fold<double>(
+    0,
+    (sum, entry) => sum + entry.weightKg,
+  );
+  return total / windowEntries.length;
+}
+
+DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
 class _ReportHeroHeader extends StatelessWidget {
   const _ReportHeroHeader({required this.latest, required this.scale});
@@ -246,9 +257,38 @@ class _MeasuredDateBadge extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFF9BC2)),
       ),
       child: Text(
-        '測定日：${_formatJstDate(date)} JST',
+        '測定日：${_formatJstDate(date)}',
         style: TextStyle(fontSize: 24 * scale, fontWeight: FontWeight.w900),
       ),
+    );
+  }
+}
+
+class _ReportTitleArea extends StatelessWidget {
+  const _ReportTitleArea({required this.date, required this.scale});
+
+  final DateTime date;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MeasuredDateBadge(date: date, scale: scale),
+            SizedBox(height: 12 * scale),
+            _RibbonTitle(scale: scale),
+          ],
+        ),
+        Positioned(
+          right: 14 * scale,
+          child: _WeightInputShortcutButton(scale: scale),
+        ),
+      ],
     );
   }
 }
@@ -260,31 +300,29 @@ class _RibbonTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 52 * scale,
-          vertical: 9 * scale,
-        ),
-        decoration: BoxDecoration(
-          color: _reportPink,
-          borderRadius: BorderRadius.circular(3 * scale),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.assignment, color: Colors.white, size: 32 * scale),
-            SizedBox(width: 10 * scale),
-            Text(
-              '直近７日間の体重記録',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 31 * scale,
-                fontWeight: FontWeight.w900,
-              ),
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 52 * scale,
+        vertical: 9 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: _reportPink,
+        borderRadius: BorderRadius.circular(3 * scale),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.assignment, color: Colors.white, size: 32 * scale),
+          SizedBox(width: 10 * scale),
+          Text(
+            '直近７日間の体重記録',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 31 * scale,
+              fontWeight: FontWeight.w900,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -309,8 +347,8 @@ class _SevenDayTable extends StatelessWidget {
           3: FlexColumnWidth(1.75),
         },
         children: [
-          _tableRow(const [
-            Text('日付（JST）'),
+          _tableRow([
+            Text('日付'),
             Text('体重'),
             Text('前日比'),
             Text('7日平均\n（その日を含む過去7日間平均）'),
@@ -344,6 +382,36 @@ class _SevenDayTable extends StatelessWidget {
             ),
           )
           .toList(),
+    );
+  }
+}
+
+class _WeightInputShortcutButton extends StatelessWidget {
+  const _WeightInputShortcutButton({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '体重入力画面を開く',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => const HomeScreen(forceInput: true),
+            ),
+          );
+        },
+        child: Image.asset(
+          _weightInputIconAsset,
+          width: 116 * scale,
+          height: 116 * scale,
+          semanticLabel: '体重入力アイコン',
+        ),
+      ),
     );
   }
 }

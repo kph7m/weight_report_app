@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/weight_entry.dart';
 import '../providers/weight_providers.dart';
 import '../services/app_error_handler.dart';
 import 'report_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.forceInput = false});
+
+  final bool forceInput;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -131,11 +134,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final entriesAsync = ref.watch(weightEntriesProvider);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFD),
-      body: entriesAsync.when(
-        data: (_) {
-          return CustomScrollView(
+    return entriesAsync.when(
+      data: (entries) {
+        if (!widget.forceInput &&
+            !_isSavingWeight &&
+            !_isCelebrating &&
+            _hasTodayEntry(entries)) {
+          return const ReportScreen();
+        }
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFFFFBFD),
+          body: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
                 child: _WeightInputHero(
@@ -148,14 +158,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ],
-          );
-        },
-        error: (error, stackTrace) =>
-            Center(child: Text('読み込みに失敗しました: $error')),
-        loading: () => const Center(child: CircularProgressIndicator()),
+          ),
+        );
+      },
+      error: (error, stackTrace) => Scaffold(
+        backgroundColor: const Color(0xFFFFFBFD),
+        body: Center(child: Text('読み込みに失敗しました: $error')),
+      ),
+      loading: () => const Scaffold(
+        backgroundColor: Color(0xFFFFFBFD),
+        body: Center(child: CircularProgressIndicator()),
       ),
     );
   }
+}
+
+bool _hasTodayEntry(List<WeightEntry> entries) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  return entries.any((entry) => entry.date == today);
 }
 
 class _WeightInputHero extends StatelessWidget {
