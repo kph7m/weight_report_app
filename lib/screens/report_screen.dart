@@ -273,6 +273,7 @@ class _ReportTitleArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
         Column(
@@ -406,8 +407,8 @@ class _WeightInputShortcutButton extends StatelessWidget {
         },
         child: Image.asset(
           _weightInputIconAsset,
-          width: 132 * scale,
-          height: 132 * scale,
+          width: 116 * scale,
+          height: 116 * scale,
           semanticLabel: '体重入力アイコン',
         ),
       ),
