@@ -21,11 +21,12 @@ const _requiredImageAssets = <String>[
 Future<void> _pumpHomeScreen(
   WidgetTester tester, {
   WeightRepository? repository,
+  List<WeightEntry> entries = const [],
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        weightEntriesProvider.overrideWith((ref) => Stream.value(const [])),
+        weightEntriesProvider.overrideWith((ref) => Stream.value(entries)),
         if (repository != null)
           weightRepositoryProvider.overrideWith((ref) async => repository),
       ],
@@ -187,6 +188,26 @@ void main() {
     },
   );
 
+  testWidgets('shows report screen when today entry already exists', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(922, 1706));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    await _pumpHomeScreen(
+      tester,
+      entries: [WeightEntry(date: today, weightKg: 85.3)],
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ReportScreen), findsOneWidget);
+    expect(find.text('測定日：${_formatTestDate(today)}'), findsOneWidget);
+    expect(find.text('日付'), findsOneWidget);
+    expect(find.textContaining('JST'), findsNothing);
+  });
+
   testWidgets('renders report screen with report character', (tester) async {
     await tester.binding.setSurfaceSize(const Size(922, 1706));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -228,6 +249,8 @@ void main() {
     );
     expect(find.text('本日の\n体重'), findsOneWidget);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
+    expect(find.text('日付'), findsOneWidget);
+    expect(find.textContaining('JST'), findsNothing);
     expect(find.text('視聴者さん♪'), findsOneWidget);
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
     expect(find.textContaining('目標まであと'), findsOneWidget);
@@ -293,4 +316,10 @@ Future<void> _verifyRequiredImageAssets() async {
       throw StateError('Required golden image asset is empty: $assetPath');
     }
   }
+}
+
+String _formatTestDate(DateTime date) {
+  const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
+  final weekday = weekdays[date.weekday - 1];
+  return '${date.year}/${date.month}/${date.day}（$weekday）';
 }
