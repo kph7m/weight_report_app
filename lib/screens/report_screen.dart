@@ -406,8 +406,8 @@ class _WeightInputShortcutButton extends StatelessWidget {
         },
         child: Image.asset(
           _weightInputIconAsset,
-          width: 78 * scale,
-          height: 78 * scale,
+          width: 132 * scale,
+          height: 132 * scale,
           semanticLabel: '体重入力アイコン',
         ),
       ),
