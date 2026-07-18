@@ -259,7 +259,7 @@ class _MeasuredDateBadge extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFF9BC2)),
       ),
       child: Text(
-        '測定日：${_formatJstDate(date)} JST',
+        '測定日：${_formatJstDate(date)}',
         style: TextStyle(fontSize: 24 * scale, fontWeight: FontWeight.w900),
       ),
     );
@@ -323,7 +323,7 @@ class _SevenDayTable extends StatelessWidget {
         },
         children: [
           _tableRow(const [
-            Text('日付（JST）'),
+            Text('日付'),
             Text('体重'),
             Text('前日比'),
             Text('7日平均\n（その日を含む過去7日間平均）'),
