@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/weight_entry.dart';
 import '../providers/weight_providers.dart';
+import 'home_screen.dart';
 
 const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
 const _ink = Color(0xFF171717);
 const _reportCharacterScale = 1.7;
+const _weightInputIconAsset = 'assets/images/weight_input_icon.png';
 
 class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
@@ -75,14 +77,10 @@ class _ReportBody extends StatelessWidget {
                           children: [
                             _ReportHeroHeader(latest: latest, scale: scale),
                             const SizedBox(height: 8),
-                            Center(
-                              child: _MeasuredDateBadge(
-                                date: latest?.date ?? DateTime.now(),
-                                scale: scale,
-                              ),
+                            _ReportTitleArea(
+                              date: latest?.date ?? DateTime.now(),
+                              scale: scale,
                             ),
-                            const SizedBox(height: 12),
-                            _RibbonTitle(scale: scale),
                             const SizedBox(height: 8),
                             _SevenDayTable(rows: rows, scale: scale),
                             const SizedBox(height: 20),
@@ -266,6 +264,34 @@ class _MeasuredDateBadge extends StatelessWidget {
   }
 }
 
+class _ReportTitleArea extends StatelessWidget {
+  const _ReportTitleArea({required this.date, required this.scale});
+
+  final DateTime date;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MeasuredDateBadge(date: date, scale: scale),
+            SizedBox(height: 12 * scale),
+            _RibbonTitle(scale: scale),
+          ],
+        ),
+        Positioned(
+          right: 14 * scale,
+          child: _WeightInputShortcutButton(scale: scale),
+        ),
+      ],
+    );
+  }
+}
+
 class _RibbonTitle extends StatelessWidget {
   const _RibbonTitle({required this.scale});
 
@@ -273,31 +299,29 @@ class _RibbonTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 52 * scale,
-          vertical: 9 * scale,
-        ),
-        decoration: BoxDecoration(
-          color: _reportPink,
-          borderRadius: BorderRadius.circular(3 * scale),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.assignment, color: Colors.white, size: 32 * scale),
-            SizedBox(width: 10 * scale),
-            Text(
-              '直近７日間の体重記録',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 31 * scale,
-                fontWeight: FontWeight.w900,
-              ),
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 52 * scale,
+        vertical: 9 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: _reportPink,
+        borderRadius: BorderRadius.circular(3 * scale),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.assignment, color: Colors.white, size: 32 * scale),
+          SizedBox(width: 10 * scale),
+          Text(
+            '直近７日間の体重記録',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 31 * scale,
+              fontWeight: FontWeight.w900,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -322,7 +346,7 @@ class _SevenDayTable extends StatelessWidget {
           3: FlexColumnWidth(1.75),
         },
         children: [
-          _tableRow(const [
+          _tableRow([
             Text('日付'),
             Text('体重'),
             Text('前日比'),
@@ -357,6 +381,36 @@ class _SevenDayTable extends StatelessWidget {
             ),
           )
           .toList(),
+    );
+  }
+}
+
+class _WeightInputShortcutButton extends StatelessWidget {
+  const _WeightInputShortcutButton({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '体重入力画面を開く',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => const HomeScreen(forceInput: true),
+            ),
+          );
+        },
+        child: Image.asset(
+          _weightInputIconAsset,
+          width: 132 * scale,
+          height: 132 * scale,
+          semanticLabel: '体重入力アイコン',
+        ),
+      ),
     );
   }
 }
