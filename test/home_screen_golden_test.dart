@@ -16,6 +16,7 @@ const _requiredImageAssets = <String>[
   'assets/images/character_report.png',
   'assets/images/cloud_top.png',
   'assets/images/cloud_bottom.png',
+  'assets/images/weight_input_icon.png',
 ];
 
 Future<void> _pumpHomeScreen(
@@ -249,6 +250,8 @@ void main() {
     );
     expect(find.text('本日の\n体重'), findsOneWidget);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
+    expect(find.bySemanticsLabel('体重入力画面を開く'), findsOneWidget);
+    expect(find.bySemanticsLabel('体重入力アイコン'), findsOneWidget);
     expect(find.text('日付'), findsOneWidget);
     expect(find.textContaining('JST'), findsNothing);
     expect(find.text('視聴者さん♪'), findsOneWidget);
@@ -260,6 +263,45 @@ void main() {
       find.byType(ReportScreen),
       matchesGoldenFile('../docs/screenshots/report-screen.png'),
     );
+  });
+
+  testWidgets('weight input icon opens forced input screen from report', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(922, 1706));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          weightEntriesProvider.overrideWith(
+            (ref) => Stream.value([WeightEntry(date: today, weightKg: 85.3)]),
+          ),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFFEF5EA8),
+            ),
+            fontFamily: _fontFamily,
+            scaffoldBackgroundColor: const Color(0xFFFFF7FB),
+            useMaterial3: true,
+          ),
+          home: const ReportScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('体重入力画面を開く'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(TextFormField), findsOneWidget);
+    expect(find.byType(ReportScreen), findsNothing);
   });
 
   testWidgets('shows an error dialog when automatic save fails', (

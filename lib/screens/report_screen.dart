@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/weight_entry.dart';
 import '../providers/weight_providers.dart';
+import 'home_screen.dart';
 
 const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
 const _ink = Color(0xFF171717);
 const _reportCharacterScale = 1.7;
+const _weightInputIconAsset = 'assets/images/weight_input_icon.png';
 
 class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
@@ -311,26 +313,36 @@ class _SevenDayTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10 * scale),
-      child: Table(
-        border: TableBorder.all(color: const Color(0xFFFFD5E4)),
-        columnWidths: const {
-          0: FlexColumnWidth(1.55),
-          1: FlexColumnWidth(1.15),
-          2: FlexColumnWidth(1.05),
-          3: FlexColumnWidth(1.75),
-        },
-        children: [
-          _tableRow(const [
-            Text('日付'),
-            Text('体重'),
-            Text('前日比'),
-            Text('7日平均\n（その日を含む過去7日間平均）'),
-          ], isHeader: true),
-          ...rows.map((row) => _tableRow(row.cells)),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: _WeightInputShortcutButton(scale: scale),
+        ),
+        SizedBox(height: 4 * scale),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10 * scale),
+          child: Table(
+            border: TableBorder.all(color: const Color(0xFFFFD5E4)),
+            columnWidths: const {
+              0: FlexColumnWidth(1.55),
+              1: FlexColumnWidth(1.15),
+              2: FlexColumnWidth(1.05),
+              3: FlexColumnWidth(1.75),
+            },
+            children: [
+              _tableRow([
+                Text('日付'),
+                Text('体重'),
+                Text('前日比'),
+                Text('7日平均\n（その日を含む過去7日間平均）'),
+              ], isHeader: true),
+              ...rows.map((row) => _tableRow(row.cells)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -357,6 +369,44 @@ class _SevenDayTable extends StatelessWidget {
             ),
           )
           .toList(),
+    );
+  }
+}
+
+class _WeightInputShortcutButton extends StatelessWidget {
+  const _WeightInputShortcutButton({required this.scale});
+
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '体重入力画面を開く',
+      child: Material(
+        color: Colors.white,
+        shape: const CircleBorder(),
+        elevation: 2,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute<void>(
+                builder: (_) => const HomeScreen(forceInput: true),
+              ),
+            );
+          },
+          child: Padding(
+            padding: EdgeInsets.all(4 * scale),
+            child: Image.asset(
+              _weightInputIconAsset,
+              width: 34 * scale,
+              height: 34 * scale,
+              semanticLabel: '体重入力アイコン',
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

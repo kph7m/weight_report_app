@@ -10,7 +10,9 @@ import '../services/app_error_handler.dart';
 import 'report_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.forceInput = false});
+
+  final bool forceInput;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -134,7 +136,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return entriesAsync.when(
       data: (entries) {
-        if (!_isSavingWeight && !_isCelebrating && _hasTodayEntry(entries)) {
+        if (!widget.forceInput &&
+            !_isSavingWeight &&
+            !_isCelebrating &&
+            _hasTodayEntry(entries)) {
           return const ReportScreen();
         }
 
