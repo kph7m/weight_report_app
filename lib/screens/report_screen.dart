@@ -77,14 +77,10 @@ class _ReportBody extends StatelessWidget {
                           children: [
                             _ReportHeroHeader(latest: latest, scale: scale),
                             const SizedBox(height: 8),
-                            Center(
-                              child: _MeasuredDateBadge(
-                                date: latest?.date ?? DateTime.now(),
-                                scale: scale,
-                              ),
+                            _ReportTitleArea(
+                              date: latest?.date ?? DateTime.now(),
+                              scale: scale,
                             ),
-                            const SizedBox(height: 12),
-                            _RibbonTitle(scale: scale),
                             const SizedBox(height: 8),
                             _SevenDayTable(rows: rows, scale: scale),
                             const SizedBox(height: 20),
@@ -268,6 +264,34 @@ class _MeasuredDateBadge extends StatelessWidget {
   }
 }
 
+class _ReportTitleArea extends StatelessWidget {
+  const _ReportTitleArea({required this.date, required this.scale});
+
+  final DateTime date;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MeasuredDateBadge(date: date, scale: scale),
+            SizedBox(height: 12 * scale),
+            _RibbonTitle(scale: scale),
+          ],
+        ),
+        Positioned(
+          right: 14 * scale,
+          child: _WeightInputShortcutButton(scale: scale),
+        ),
+      ],
+    );
+  }
+}
+
 class _RibbonTitle extends StatelessWidget {
   const _RibbonTitle({required this.scale});
 
@@ -275,31 +299,29 @@ class _RibbonTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 52 * scale,
-          vertical: 9 * scale,
-        ),
-        decoration: BoxDecoration(
-          color: _reportPink,
-          borderRadius: BorderRadius.circular(3 * scale),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.assignment, color: Colors.white, size: 32 * scale),
-            SizedBox(width: 10 * scale),
-            Text(
-              '直近７日間の体重記録',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 31 * scale,
-                fontWeight: FontWeight.w900,
-              ),
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 52 * scale,
+        vertical: 9 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: _reportPink,
+        borderRadius: BorderRadius.circular(3 * scale),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.assignment, color: Colors.white, size: 32 * scale),
+          SizedBox(width: 10 * scale),
+          Text(
+            '直近７日間の体重記録',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 31 * scale,
+              fontWeight: FontWeight.w900,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -313,36 +335,26 @@ class _SevenDayTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: _WeightInputShortcutButton(scale: scale),
-        ),
-        SizedBox(height: 4 * scale),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10 * scale),
-          child: Table(
-            border: TableBorder.all(color: const Color(0xFFFFD5E4)),
-            columnWidths: const {
-              0: FlexColumnWidth(1.55),
-              1: FlexColumnWidth(1.15),
-              2: FlexColumnWidth(1.05),
-              3: FlexColumnWidth(1.75),
-            },
-            children: [
-              _tableRow([
-                Text('日付'),
-                Text('体重'),
-                Text('前日比'),
-                Text('7日平均\n（その日を含む過去7日間平均）'),
-              ], isHeader: true),
-              ...rows.map((row) => _tableRow(row.cells)),
-            ],
-          ),
-        ),
-      ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10 * scale),
+      child: Table(
+        border: TableBorder.all(color: const Color(0xFFFFD5E4)),
+        columnWidths: const {
+          0: FlexColumnWidth(1.55),
+          1: FlexColumnWidth(1.15),
+          2: FlexColumnWidth(1.05),
+          3: FlexColumnWidth(1.75),
+        },
+        children: [
+          _tableRow([
+            Text('日付'),
+            Text('体重'),
+            Text('前日比'),
+            Text('7日平均\n（その日を含む過去7日間平均）'),
+          ], isHeader: true),
+          ...rows.map((row) => _tableRow(row.cells)),
+        ],
+      ),
     );
   }
 
@@ -383,28 +395,20 @@ class _WeightInputShortcutButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: '体重入力画面を開く',
-      child: Material(
-        color: Colors.white,
-        shape: const CircleBorder(),
-        elevation: 2,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute<void>(
-                builder: (_) => const HomeScreen(forceInput: true),
-              ),
-            );
-          },
-          child: Padding(
-            padding: EdgeInsets.all(4 * scale),
-            child: Image.asset(
-              _weightInputIconAsset,
-              width: 34 * scale,
-              height: 34 * scale,
-              semanticLabel: '体重入力アイコン',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute<void>(
+              builder: (_) => const HomeScreen(forceInput: true),
             ),
-          ),
+          );
+        },
+        child: Image.asset(
+          _weightInputIconAsset,
+          width: 78 * scale,
+          height: 78 * scale,
+          semanticLabel: '体重入力アイコン',
         ),
       ),
     );
