@@ -15,6 +15,7 @@ import 'package:weight_report_app/providers/weight_providers.dart';
 import 'package:weight_report_app/services/weight_repository.dart';
 import 'package:weight_report_app/services/openai_responses_service.dart';
 import 'package:weight_report_app/services/ai_model_preferences.dart';
+import 'package:weight_report_app/services/prompt_repository.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
 import 'package:weight_report_app/screens/report_screen.dart';
 import 'package:weight_report_app/screens/settings_screen.dart';
@@ -122,6 +123,7 @@ class _FakeOpenAiResponsesService extends OpenAiResponsesService {
   Future<String> generateComment({
     required String apiKey,
     required String model,
+    required String instructions,
     required AiCommentRequest request,
     Future<void> Function(OpenAiExchangeData exchange)? onExchange,
   }) => result;
@@ -129,7 +131,9 @@ class _FakeOpenAiResponsesService extends OpenAiResponsesService {
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({
+      PromptRepository.aiCommentPromptKey: 'test prompt',
+    });
   });
 
   setUpAll(() async {
@@ -211,6 +215,30 @@ void main() {
       await AiModelPreferences().loadSelected(),
       const AiModel('gpt-5.6-terra'),
     );
+  });
+
+  testWidgets('edits and saves the AI comment prompt', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    SharedPreferences.setMockInitialValues({});
+    await _pumpHomeScreen(tester);
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('AIコメントプロンプト'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AiCommentPromptScreen), findsOneWidget);
+    expect(find.text('デフォルトに戻す'), findsOneWidget);
+    await expectLater(
+      find.byType(AiCommentPromptScreen),
+      matchesGoldenFile('../docs/screenshots/ai-comment-prompt-screen.png'),
+    );
+
+    await tester.enterText(find.byType(TextField), 'custom prompt');
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+    expect(await PromptRepository().getAiCommentPrompt(), 'custom prompt');
   });
 
   testWidgets('saves an entered setting through the app repository', (

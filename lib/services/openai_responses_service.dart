@@ -2,11 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
-
 import '../models/ai_comment_request.dart';
 
-const _systemPromptAsset = 'assets/prompts/ai_comment.txt';
 const _failureMessage = '今日はコメントを生成できませんでした。';
 
 class OpenAiExchangeData {
@@ -48,6 +45,7 @@ class OpenAiResponsesService {
   Future<String> generateComment({
     required String apiKey,
     required String model,
+    required String instructions,
     required AiCommentRequest request,
     Future<void> Function(OpenAiExchangeData exchange)? onExchange,
   }) async {
@@ -63,10 +61,9 @@ class OpenAiResponsesService {
     String? responseBody;
     int? statusCode;
     try {
-      final systemPrompt = await rootBundle.loadString(_systemPromptAsset);
       final requestBody = {
         'model': model,
-        'instructions': systemPrompt,
+        'instructions': instructions,
         'input': request.toPromptInput(),
       };
       requestJson = const JsonEncoder.withIndent('  ').convert({
