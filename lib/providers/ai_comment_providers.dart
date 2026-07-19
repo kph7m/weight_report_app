@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/ai_comment_request.dart';
+import '../models/open_ai_exchange.dart';
 import '../models/weight_entry.dart';
 import '../services/openai_responses_service.dart';
 import 'weight_providers.dart';
@@ -99,7 +100,21 @@ class AiCommentController extends StateNotifier<AiCommentGenerationState> {
       );
       final comment = await _ref
           .read(openAiResponsesServiceProvider)
-          .generateComment(apiKey: apiKey, request: request);
+          .generateComment(
+            apiKey: apiKey,
+            request: request,
+            onExchange: (exchange) => repository.saveLatestOpenAiExchange(
+              OpenAiExchange(
+                requestedAt: exchange.requestedAt,
+                requestJson: exchange.requestJson,
+                responseBody: exchange.responseBody,
+                succeeded: exchange.succeeded,
+                statusCode: exchange.statusCode,
+                elapsedMilliseconds: exchange.elapsedMilliseconds,
+                errorMessage: exchange.errorMessage,
+              ),
+            ),
+          );
       await repository.saveAiComment(today, comment);
       state = AiCommentGenerationState(
         AiCommentGenerationStatus.success,

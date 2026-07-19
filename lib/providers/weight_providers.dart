@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_settings.dart';
+import '../models/open_ai_exchange.dart';
 import '../models/weight_entry.dart';
 import '../services/weight_repository.dart';
 
@@ -18,6 +19,13 @@ final weightEntriesProvider = StreamProvider<List<WeightEntry>>((ref) async* {
 final appSettingsProvider = StreamProvider<AppSettings?>((ref) async* {
   final repository = await ref.watch(weightRepositoryProvider.future);
   yield* repository.watchSettings();
+});
+
+final latestOpenAiExchangeProvider = StreamProvider<OpenAiExchange?>((
+  ref,
+) async* {
+  final repository = await ref.watch(weightRepositoryProvider.future);
+  yield* repository.watchLatestOpenAiExchange();
 });
 
 final sevenDayAverageProvider = Provider<double?>((ref) {

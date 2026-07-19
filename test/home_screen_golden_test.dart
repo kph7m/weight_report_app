@@ -119,6 +119,7 @@ class _FakeOpenAiResponsesService extends OpenAiResponsesService {
   Future<String> generateComment({
     required String apiKey,
     required AiCommentRequest request,
+    Future<void> Function(OpenAiExchangeData exchange)? onExchange,
   }) => result;
 }
 
