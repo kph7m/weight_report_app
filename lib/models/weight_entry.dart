@@ -10,6 +10,7 @@ class WeightEntry {
     required this.date,
     required this.weightKg,
     this.createdAt,
+    this.aiComment,
   });
 
   Id id;
@@ -19,4 +20,6 @@ class WeightEntry {
   double weightKg;
 
   DateTime? createdAt;
+
+  String? aiComment;
 }

@@ -86,8 +86,39 @@ class WeightRepository {
           WeightEntry(date: today, weightKg: weightKg, createdAt: now);
       entry.weightKg = weightKg;
       entry.createdAt ??= now;
+      entry.aiComment = null;
       await _isar.weightEntries.put(entry);
     });
+  }
+
+  Future<void> saveAiComment(DateTime date, String comment) async {
+    await _isar.writeTxn(() async {
+      final entries = await _isar.weightEntries.where().findAll();
+      final entry = entries.cast<WeightEntry?>().firstWhere(
+        (item) => item?.date == DateTime(date.year, date.month, date.day),
+        orElse: () => null,
+      );
+      if (entry == null) throw StateError('Weight entry not found.');
+      entry.aiComment = comment;
+      await _isar.weightEntries.put(entry);
+    });
+  }
+
+  Future<String> previousDayAiComment(DateTime date) async {
+    final previousDay = DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(const Duration(days: 1));
+    final entries = await _isar.weightEntries.where().findAll();
+    return entries
+            .cast<WeightEntry?>()
+            .firstWhere(
+              (entry) => entry?.date == previousDay,
+              orElse: () => null,
+            )
+            ?.aiComment ??
+        '';
   }
 
   Stream<AppSettings?> watchSettings() async* {
