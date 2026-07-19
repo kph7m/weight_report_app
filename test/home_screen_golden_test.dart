@@ -94,6 +94,7 @@ void main() {
       await Future<void>.delayed(const Duration(seconds: 1));
     });
     await tester.pump();
+    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
     expect(find.byType(Image), findsNWidgets(3));
     final renderImages = tester.renderObjectList<RenderImage>(
       find.byType(RawImage),

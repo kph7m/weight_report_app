@@ -249,6 +249,35 @@ class _WeightInputHero extends StatelessWidget {
               excludeFromSemantics: true,
             ),
           ),
+          Positioned(
+            top: mediaQuery.padding.top + 18,
+            right: 20,
+            child: Semantics(
+              label: '設定',
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.94),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFF2B6D8), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE95BAA).withValues(alpha: 0.22),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const SizedBox.square(
+                  dimension: 56,
+                  child: Icon(
+                    Icons.settings_rounded,
+                    color: Color(0xFFEF5EA8),
+                    size: 34,
+                  ),
+                ),
+              ),
+            ),
+          ),
           Padding(
             padding: EdgeInsets.fromLTRB(
               20,
