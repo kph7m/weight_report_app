@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/weight_entry.dart';
+import '../providers/ai_comment_providers.dart';
 import '../providers/weight_providers.dart';
 import '../services/app_error_handler.dart';
 import 'report_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, this.forceInput = false});
@@ -99,7 +101,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _isCelebrating = true;
       });
-      await Future<void>.delayed(const Duration(seconds: 3));
+      await ref
+          .read(aiCommentControllerProvider.notifier)
+          .generate(
+            weightKg: weight,
+            entries:
+                ref.read(weightEntriesProvider).valueOrNull ??
+                const <WeightEntry>[],
+          );
       if (!mounted) return;
 
       Navigator.of(
@@ -155,6 +164,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   characterAsset: _characterAsset,
                   cloudTopAsset: _cloudTop,
                   cloudBottomAsset: _cloudBottom,
+                  inputEnabled: !_isSavingWeight,
+                  onSettingsPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SettingsScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -187,6 +204,8 @@ class _WeightInputHero extends StatelessWidget {
     required this.characterAsset,
     required this.cloudTopAsset,
     required this.cloudBottomAsset,
+    required this.inputEnabled,
+    required this.onSettingsPressed,
   });
 
   final GlobalKey<FormState> formKey;
@@ -195,6 +214,8 @@ class _WeightInputHero extends StatelessWidget {
   final String characterAsset;
   final String cloudTopAsset;
   final String cloudBottomAsset;
+  final bool inputEnabled;
+  final VoidCallback onSettingsPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +270,37 @@ class _WeightInputHero extends StatelessWidget {
               excludeFromSemantics: true,
             ),
           ),
+          Positioned(
+            top: mediaQuery.padding.top + 18,
+            right: 20,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.94),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFF2B6D8), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE95BAA).withValues(alpha: 0.22),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                tooltip: '設定',
+                onPressed: onSettingsPressed,
+                constraints: const BoxConstraints.tightFor(
+                  width: 56,
+                  height: 56,
+                ),
+                icon: const Icon(
+                  Icons.settings_rounded,
+                  color: Color(0xFFEF5EA8),
+                  size: 34,
+                ),
+              ),
+            ),
+          ),
           Padding(
             padding: EdgeInsets.fromLTRB(
               20,
@@ -294,6 +346,7 @@ class _WeightInputHero extends StatelessWidget {
                           child: _WeightDisplayCard(
                             controller: controller,
                             focusNode: focusNode,
+                            enabled: inputEnabled,
                             colorScheme: colorScheme,
                             inputBorder: _inputBorder,
                           ),
@@ -322,12 +375,14 @@ class _WeightDisplayCard extends StatelessWidget {
   const _WeightDisplayCard({
     required this.controller,
     required this.focusNode,
+    required this.enabled,
     required this.colorScheme,
     required this.inputBorder,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
+  final bool enabled;
   final ColorScheme colorScheme;
   final OutlineInputBorder Function(Color color) inputBorder;
 
@@ -351,6 +406,7 @@ class _WeightDisplayCard extends StatelessWidget {
         child: TextFormField(
           controller: controller,
           focusNode: focusNode,
+          enabled: enabled,
           textAlign: TextAlign.center,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: const [_WeightInputFormatter()],
