@@ -394,9 +394,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ReportScreen), findsOneWidget);
-    expect(find.textContaining('測定日：'), findsNothing);
+    expect(find.text('測定日：${_formatTestDate(today)}'), findsOneWidget);
     expect(find.text('日付'), findsOneWidget);
-    expect(find.text('目標体重'), findsOneWidget);
     expect(find.textContaining('JST'), findsNothing);
   });
 
@@ -446,17 +445,15 @@ void main() {
       'assets/images/character_report.png',
     );
     expect(find.text('本日の\n体重'), findsOneWidget);
-    expect(find.text('直近７日間の体重記録'), findsNothing);
+    expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.bySemanticsLabel('体重入力画面を開く'), findsOneWidget);
     expect(find.bySemanticsLabel('体重入力アイコン'), findsOneWidget);
     expect(find.text('日付'), findsOneWidget);
-    expect(find.text('目標体重'), findsOneWidget);
-    expect(find.text('75.0kg'), findsOneWidget);
     expect(find.textContaining('JST'), findsNothing);
     expect(find.text('🌸 今日のひとこと♪'), findsOneWidget);
     expect(find.textContaining('前日から0.4kg減っていますわ'), findsOneWidget);
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
-    expect(find.textContaining('目標まであと'), findsNothing);
+    expect(find.textContaining('目標まであと'), findsOneWidget);
     expect(find.textContaining('※7日平均は'), findsNothing);
     expect(find.byType(SingleChildScrollView), findsNothing);
     await expectLater(
@@ -558,4 +555,10 @@ Future<void> _verifyRequiredImageAssets() async {
       throw StateError('Required golden image asset is empty: $assetPath');
     }
   }
+}
+
+String _formatTestDate(DateTime date) {
+  const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
+  final weekday = weekdays[date.weekday - 1];
+  return '${date.year}/${date.month}/${date.day}（$weekday）';
 }

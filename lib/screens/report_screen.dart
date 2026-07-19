@@ -47,6 +47,10 @@ class _ReportBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final latest = entries.isNotEmpty ? entries.first : null;
+    final latestWeight = latest?.weightKg;
+    final remaining = latestWeight == null
+        ? null
+        : (latestWeight - targetWeightKg).clamp(0, double.infinity).toDouble();
     final rows = _recentRows(entries);
 
     return LayoutBuilder(
@@ -75,11 +79,15 @@ class _ReportBody extends StatelessWidget {
                           children: [
                             _ReportHeroHeader(latest: latest, scale: scale),
                             const SizedBox(height: 8),
-                            _TargetWeightHeader(scale: scale),
+                            _ReportTitleArea(
+                              date: latest?.date ?? DateTime.now(),
+                              scale: scale,
+                            ),
                             const SizedBox(height: 8),
                             _SevenDayTable(rows: rows, scale: scale),
                             const SizedBox(height: 20),
                             _LayeredReportBottomSection(
+                              remaining: remaining,
                               aiComment:
                                   latest?.aiComment ??
                                   generatedComment ??
@@ -236,57 +244,89 @@ class _ReportHeroHeader extends StatelessWidget {
   }
 }
 
-class _TargetWeightHeader extends StatelessWidget {
-  const _TargetWeightHeader({required this.scale});
+class _MeasuredDateBadge extends StatelessWidget {
+  const _MeasuredDateBadge({required this.date, required this.scale});
+
+  final DateTime date;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 28 * scale,
+        vertical: 7 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFE4EF),
+        borderRadius: BorderRadius.circular(8 * scale),
+        border: Border.all(color: const Color(0xFFFF9BC2)),
+      ),
+      child: Text(
+        '測定日：${_formatJstDate(date)}',
+        style: TextStyle(fontSize: 24 * scale, fontWeight: FontWeight.w900),
+      ),
+    );
+  }
+}
+
+class _ReportTitleArea extends StatelessWidget {
+  const _ReportTitleArea({required this.date, required this.scale});
+
+  final DateTime date;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MeasuredDateBadge(date: date, scale: scale),
+            SizedBox(height: 12 * scale),
+            _RibbonTitle(scale: scale),
+          ],
+        ),
+        Positioned(
+          right: 14 * scale,
+          child: _WeightInputShortcutButton(scale: scale),
+        ),
+      ],
+    );
+  }
+}
+
+class _RibbonTitle extends StatelessWidget {
+  const _RibbonTitle({required this.scale});
 
   final double scale;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      // Matches the combined height of the former measured-date and
-      // seven-day-records title areas.
-      height: 107 * scale,
-      child: Stack(
-        alignment: Alignment.center,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 52 * scale,
+        vertical: 9 * scale,
+      ),
+      decoration: BoxDecoration(
+        color: _reportPink,
+        borderRadius: BorderRadius.circular(3 * scale),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned.fill(
-            right: 140 * scale,
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE4EF),
-                borderRadius: BorderRadius.circular(12 * scale),
-                border: Border.all(color: const Color(0xFFFF9BC2), width: 2),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.gps_fixed, color: _deepPink, size: 38 * scale),
-                  SizedBox(width: 12 * scale),
-                  Text(
-                    '目標体重',
-                    style: TextStyle(
-                      color: _deepPink,
-                      fontSize: 30 * scale,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  SizedBox(width: 28 * scale),
-                  Text(
-                    '75.0kg',
-                    style: TextStyle(
-                      color: _deepPink,
-                      fontSize: 52 * scale,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
+          Icon(Icons.assignment, color: Colors.white, size: 32 * scale),
+          SizedBox(width: 10 * scale),
+          Text(
+            '直近７日間の体重記録',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 31 * scale,
+              fontWeight: FontWeight.w900,
             ),
-          ),
-          Positioned(
-            right: 14 * scale,
-            child: _WeightInputShortcutButton(scale: scale),
           ),
         ],
       ),
@@ -382,12 +422,137 @@ class _WeightInputShortcutButton extends StatelessWidget {
   }
 }
 
+class _SummaryCards extends StatelessWidget {
+  const _SummaryCards({required this.remaining, required this.scale});
+
+  final double? remaining;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      _SummaryCard(
+        icon: Icons.gps_fixed,
+        title: '目標体重',
+        value: '75.0',
+        unit: 'kg',
+        footer: '目標まであと\n${_formatNumber(remaining)}kg',
+        color: _deepPink,
+        scale: scale,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 560) {
+          return Column(children: [cards[0]]);
+        }
+        return Row(
+          children: [
+            Expanded(child: cards[0]),
+            const Spacer(),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.unit,
+    required this.footer,
+    required this.color,
+    required this.scale,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+  final String unit;
+  final String footer;
+  final Color color;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(14 * scale),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: color.withValues(alpha: 0.26)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 31 * scale),
+              SizedBox(width: 8 * scale),
+              Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 21 * scale,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8 * scale),
+          RichText(
+            text: TextSpan(
+              style: TextStyle(color: color, fontWeight: FontWeight.w900),
+              children: [
+                TextSpan(
+                  text: value,
+                  style: TextStyle(fontSize: 54 * scale),
+                ),
+                TextSpan(
+                  text: unit,
+                  style: TextStyle(fontSize: 26 * scale),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 8 * scale),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 8 * scale),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(8 * scale),
+              border: Border.all(color: color.withValues(alpha: 0.16)),
+            ),
+            child: Text(
+              footer,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: color,
+                fontSize: 18 * scale,
+                fontWeight: FontWeight.w900,
+                height: 1.25,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _LayeredReportBottomSection extends StatelessWidget {
   const _LayeredReportBottomSection({
+    required this.remaining,
     required this.aiComment,
     required this.scale,
   });
 
+  final double? remaining;
   final String aiComment;
   final double scale;
 
@@ -396,11 +561,19 @@ class _LayeredReportBottomSection extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final messageWidth = constraints.maxWidth * 0.52;
+        final cardWidth = constraints.maxWidth * 0.52;
+
         return SizedBox(
           height: 760 * scale,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                width: cardWidth,
+                child: _SummaryCards(remaining: remaining, scale: scale),
+              ),
               Positioned(
                 right: 0,
                 bottom: 0,
@@ -410,9 +583,8 @@ class _LayeredReportBottomSection extends StatelessWidget {
               ),
               Positioned(
                 left: 0,
-                top: 0,
+                top: 244 * scale,
                 width: messageWidth,
-                height: 500 * scale,
                 child: _ViewerMessagePanel(aiComment: aiComment, scale: scale),
               ),
             ],
@@ -562,6 +734,8 @@ class _ReportRowData {
   ];
 }
 
+String _formatNumber(double? value) =>
+    value == null ? '--' : value.toStringAsFixed(1);
 String _formatSigned(double? value) => value == null
     ? '±0.0'
     : '${value > 0
