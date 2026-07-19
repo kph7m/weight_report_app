@@ -5,18 +5,22 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weight_report_app/models/weight_entry.dart';
 import 'package:weight_report_app/models/app_settings.dart';
 import 'package:weight_report_app/models/ai_comment_request.dart';
+import 'package:weight_report_app/models/ai_model.dart';
 import 'package:weight_report_app/providers/ai_comment_providers.dart';
 import 'package:weight_report_app/providers/weight_providers.dart';
 import 'package:weight_report_app/services/weight_repository.dart';
 import 'package:weight_report_app/services/openai_responses_service.dart';
+import 'package:weight_report_app/services/ai_model_preferences.dart';
+import 'package:weight_report_app/services/prompt_repository.dart';
+import 'package:weight_report_app/theme/app_theme.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
 import 'package:weight_report_app/screens/report_screen.dart';
 import 'package:weight_report_app/screens/settings_screen.dart';
 
-const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
   'assets/images/character_pointing_input.png',
   'assets/images/character_thinking.png',
@@ -43,12 +47,7 @@ Future<void> _pumpHomeScreen(
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFEF5EA8)),
-          fontFamily: _fontFamily,
-          scaffoldBackgroundColor: const Color(0xFFFFF7FB),
-          useMaterial3: true,
-        ),
+        theme: buildAppTheme(),
         home: const HomeScreen(),
       ),
     ),
@@ -118,11 +117,20 @@ class _FakeOpenAiResponsesService extends OpenAiResponsesService {
   @override
   Future<String> generateComment({
     required String apiKey,
+    required String model,
+    required String instructions,
     required AiCommentRequest request,
+    Future<void> Function(OpenAiExchangeData exchange)? onExchange,
   }) => result;
 }
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({
+      PromptRepository.aiCommentPromptKey: 'test prompt',
+    });
+  });
+
   setUpAll(() async {
     await _verifyRequiredImageAssets();
   });
@@ -163,6 +171,8 @@ void main() {
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(find.text('身長'), findsOneWidget);
     expect(find.text('目標体重'), findsOneWidget);
+    expect(find.text('AIモデル'), findsOneWidget);
+    expect(find.text('gpt-5.5-instant'), findsOneWidget);
     expect(find.text('OpenAIキー'), findsOneWidget);
     expect(find.textContaining('182.0'), findsNothing);
     expect(find.textContaining('75.0'), findsNothing);
@@ -175,6 +185,55 @@ void main() {
     await tester.tap(find.byTooltip('戻る'));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('selects an AI model from settings', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    SharedPreferences.setMockInitialValues({
+      AiModelPreferences.cachedModelsKey: ['gpt-5.5-instant', 'gpt-5.6-terra'],
+    });
+    await _pumpHomeScreen(tester);
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('AIモデル'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('AIモデルを選択'), findsOneWidget);
+    expect(find.text('gpt-5.6-terra'), findsOneWidget);
+    await tester.tap(find.text('gpt-5.6-terra'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('gpt-5.6-terra'), findsOneWidget);
+    expect(
+      await AiModelPreferences().loadSelected(),
+      const AiModel('gpt-5.6-terra'),
+    );
+  });
+
+  testWidgets('edits and saves the AI comment prompt', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    SharedPreferences.setMockInitialValues({});
+    await _pumpHomeScreen(tester);
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('AIコメントプロンプト'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AiCommentPromptScreen), findsOneWidget);
+    expect(find.text('デフォルトに戻す'), findsOneWidget);
+    await expectLater(
+      find.byType(AiCommentPromptScreen),
+      matchesGoldenFile('../docs/screenshots/ai-comment-prompt-screen.png'),
+    );
+
+    await tester.enterText(find.byType(TextField), 'custom prompt');
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+    expect(await PromptRepository().getAiCommentPrompt(), 'custom prompt');
   });
 
   testWidgets('saves an entered setting through the app repository', (
@@ -370,7 +429,7 @@ void main() {
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFFEF5EA8),
             ),
-            fontFamily: _fontFamily,
+            fontFamily: appFontFamily,
             scaffoldBackgroundColor: const Color(0xFFFFF7FB),
             useMaterial3: true,
           ),
@@ -391,7 +450,7 @@ void main() {
     expect(find.bySemanticsLabel('体重入力アイコン'), findsOneWidget);
     expect(find.text('日付'), findsOneWidget);
     expect(find.textContaining('JST'), findsNothing);
-    expect(find.text('視聴者さん♪'), findsOneWidget);
+    expect(find.text('🌸 今日のひとこと♪'), findsOneWidget);
     expect(find.textContaining('前日から0.4kg減っていますわ'), findsOneWidget);
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
     expect(find.textContaining('目標まであと'), findsOneWidget);
@@ -424,7 +483,7 @@ void main() {
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFFEF5EA8),
             ),
-            fontFamily: _fontFamily,
+            fontFamily: appFontFamily,
             scaffoldBackgroundColor: const Color(0xFFFFF7FB),
             useMaterial3: true,
           ),

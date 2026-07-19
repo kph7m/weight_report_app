@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/weight_entry.dart';
 import '../providers/ai_comment_providers.dart';
 import '../providers/weight_providers.dart';
+import '../theme/app_theme.dart';
 import 'home_screen.dart';
 
 const _reportPink = Color(0xFFFF3B86);
@@ -67,7 +68,6 @@ class _ReportBody extends StatelessWidget {
                 child: DefaultTextStyle.merge(
                   style: const TextStyle(
                     color: _ink,
-                    fontFamily: 'Noto Sans JP',
                     fontWeight: FontWeight.w700,
                   ),
                   child: Stack(
@@ -172,6 +172,7 @@ class _ReportHeroHeader extends StatelessWidget {
                 '本日の\n体重',
                 textAlign: TextAlign.center,
                 style: TextStyle(
+                  fontFamily: reportAccentFontFamily,
                   color: _reportPink,
                   fontSize: 30 * scale,
                   fontWeight: FontWeight.w900,
@@ -192,8 +193,8 @@ class _ReportHeroHeader extends StatelessWidget {
                   child: RichText(
                     text: TextSpan(
                       style: const TextStyle(
+                        fontFamily: reportAccentFontFamily,
                         color: _ink,
-                        fontFamily: 'Noto Sans JP',
                         fontWeight: FontWeight.w900,
                       ),
                       children: [
@@ -228,6 +229,7 @@ class _ReportHeroHeader extends StatelessWidget {
                   '今日も記録えらいですわっ♪ 継続が一番の近道ですの！',
                   textAlign: TextAlign.center,
                   style: TextStyle(
+                    fontFamily: reportAccentFontFamily,
                     fontSize: 23 * scale,
                     fontWeight: FontWeight.w900,
                   ),
@@ -504,11 +506,7 @@ class _SummaryCard extends StatelessWidget {
           SizedBox(height: 8 * scale),
           RichText(
             text: TextSpan(
-              style: TextStyle(
-                color: color,
-                fontFamily: 'Noto Sans JP',
-                fontWeight: FontWeight.w900,
-              ),
+              style: TextStyle(color: color, fontWeight: FontWeight.w900),
               children: [
                 TextSpan(
                   text: value,
@@ -662,8 +660,9 @@ class _ViewerMessagePanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '視聴者さん♪',
+            '🌸 今日のひとこと♪',
             style: TextStyle(
+              fontFamily: reportAccentFontFamily,
               color: _deepPink,
               fontSize: 31 * scale,
               fontWeight: FontWeight.w900,
@@ -673,6 +672,7 @@ class _ViewerMessagePanel extends StatelessWidget {
           Text(
             aiComment,
             style: TextStyle(
+              fontFamily: reportAccentFontFamily,
               fontSize: 18 * scale,
               height: 1.65,
               fontWeight: FontWeight.w900,

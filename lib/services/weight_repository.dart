@@ -4,6 +4,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/app_settings.dart';
+import '../models/open_ai_exchange.dart';
 import '../models/weight_entry.dart';
 
 class WeightRepository {
@@ -11,7 +12,11 @@ class WeightRepository {
 
   final Isar _isar;
 
-  static const _schemas = [WeightEntrySchema, AppSettingsSchema];
+  static const _schemas = [
+    WeightEntrySchema,
+    AppSettingsSchema,
+    OpenAiExchangeSchema,
+  ];
 
   static Future<WeightRepository> open() async {
     final directory = await getApplicationDocumentsDirectory();
@@ -136,6 +141,18 @@ class WeightRepository {
 
   Future<void> saveOpenAiApiKey(String? openAiApiKey) =>
       _updateSettings((settings) => settings.openAiApiKey = openAiApiKey);
+
+  Stream<OpenAiExchange?> watchLatestOpenAiExchange() async* {
+    yield await _isar.openAiExchanges.get(OpenAiExchange.latestExchangeId);
+    await for (final _ in _isar.openAiExchanges.watchLazy()) {
+      yield await _isar.openAiExchanges.get(OpenAiExchange.latestExchangeId);
+    }
+  }
+
+  Future<void> saveLatestOpenAiExchange(OpenAiExchange exchange) async {
+    exchange.id = OpenAiExchange.latestExchangeId;
+    await _isar.writeTxn(() => _isar.openAiExchanges.put(exchange));
+  }
 
   Future<void> _updateSettings(void Function(AppSettings) update) async {
     await _isar.writeTxn(() async {

@@ -2,13 +2,29 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
-
 import '../models/ai_comment_request.dart';
 
-const openAiResponsesModel = 'gpt-4.1-mini';
-const _systemPromptAsset = 'assets/prompts/ai_comment.txt';
 const _failureMessage = '今日はコメントを生成できませんでした。';
+
+class OpenAiExchangeData {
+  const OpenAiExchangeData({
+    required this.requestedAt,
+    required this.requestJson,
+    required this.responseBody,
+    required this.succeeded,
+    required this.statusCode,
+    required this.elapsedMilliseconds,
+    required this.errorMessage,
+  });
+
+  final DateTime requestedAt;
+  final String requestJson;
+  final String? responseBody;
+  final bool succeeded;
+  final int? statusCode;
+  final int elapsedMilliseconds;
+  final String? errorMessage;
+}
 
 class AiCommentGenerationException implements Exception {
   const AiCommentGenerationException([this.message = _failureMessage]);
@@ -28,30 +44,10 @@ class OpenAiResponsesService {
 
   Future<String> generateComment({
     required String apiKey,
+    required String model,
+    required String instructions,
     required AiCommentRequest request,
-  }) async {
-    try {
-      return await _generateComment(
-        apiKey: apiKey,
-        request: request,
-      ).timeout(timeout);
-    } on AiCommentGenerationException {
-      rethrow;
-    } on TimeoutException catch (error) {
-      throw AiCommentGenerationException(
-        'Responses API timed out after ${timeout.inSeconds} seconds. '
-        'Details: $error',
-      );
-    } on Object catch (error) {
-      throw AiCommentGenerationException(
-        'Responses API request failed. Details: $error',
-      );
-    }
-  }
-
-  Future<String> _generateComment({
-    required String apiKey,
-    required AiCommentRequest request,
+    Future<void> Function(OpenAiExchangeData exchange)? onExchange,
   }) async {
     if (apiKey.trim().isEmpty) {
       throw const AiCommentGenerationException(
@@ -59,41 +55,81 @@ class OpenAiResponsesService {
       );
     }
 
+    final requestedAt = DateTime.now();
+    final stopwatch = Stopwatch()..start();
+    String requestJson = '';
+    String? responseBody;
+    int? statusCode;
     try {
-      final systemPrompt = await rootBundle.loadString(_systemPromptAsset);
+      final requestBody = {
+        'model': model,
+        'instructions': instructions,
+        'input': request.toPromptInput(),
+      };
+      requestJson = const JsonEncoder.withIndent('  ').convert({
+        'method': 'POST',
+        'url': 'https://api.openai.com/v1/responses',
+        'headers': {
+          'Authorization': 'Bearer ${apiKey.trim()}',
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        'body': requestBody,
+      });
       final httpRequest = await _httpClient
           .postUrl(Uri.https('api.openai.com', '/v1/responses'))
           .timeout(timeout);
       httpRequest.headers
         ..set(HttpHeaders.authorizationHeader, 'Bearer ${apiKey.trim()}')
         ..contentType = ContentType.json;
-      httpRequest.write(
-        jsonEncode({
-          'model': openAiResponsesModel,
-          'instructions': systemPrompt,
-          'input': request.toPromptInput(),
-        }),
-      );
+      httpRequest.write(jsonEncode(requestBody));
 
       final response = await httpRequest.close().timeout(timeout);
-      final body = await utf8.decoder.bind(response).join().timeout(timeout);
+      statusCode = response.statusCode;
+      responseBody = await utf8.decoder.bind(response).join().timeout(timeout);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw AiCommentGenerationException(
           'Responses API returned HTTP ${response.statusCode}. '
-          'Response: ${_logExcerpt(body)}',
+          'Response: ${_logExcerpt(responseBody)}',
         );
       }
 
-      return validateAndNormalizeAiComment(
-        _extractOutputText(jsonDecode(body)),
+      final comment = validateAndNormalizeAiComment(
+        _extractOutputText(jsonDecode(responseBody)),
       );
-    } on AiCommentGenerationException {
-      rethrow;
-    } on TimeoutException {
-      rethrow;
+      stopwatch.stop();
+      await onExchange?.call(
+        OpenAiExchangeData(
+          requestedAt: requestedAt,
+          requestJson: requestJson,
+          responseBody: _prettyJson(responseBody),
+          succeeded: true,
+          statusCode: statusCode,
+          elapsedMilliseconds: stopwatch.elapsedMilliseconds,
+          errorMessage: null,
+        ),
+      );
+      return comment;
     } on Object catch (error) {
+      stopwatch.stop();
+      await onExchange?.call(
+        OpenAiExchangeData(
+          requestedAt: requestedAt,
+          requestJson: requestJson,
+          responseBody: responseBody == null ? null : _prettyJson(responseBody),
+          succeeded: false,
+          statusCode: statusCode,
+          elapsedMilliseconds: stopwatch.elapsedMilliseconds,
+          errorMessage: error.toString(),
+        ),
+      );
+      if (error is AiCommentGenerationException) rethrow;
+      if (error is TimeoutException) {
+        throw AiCommentGenerationException(
+          'Responses API timed out after ${timeout.inSeconds} seconds. Details: $error',
+        );
+      }
       throw AiCommentGenerationException(
-        'Responses API response processing failed. Details: $error',
+        'Responses API request failed. Details: $error',
       );
     }
   }
@@ -115,6 +151,14 @@ class OpenAiResponsesService {
       }
     }
     return null;
+  }
+}
+
+String _prettyJson(String value) {
+  try {
+    return const JsonEncoder.withIndent('  ').convert(jsonDecode(value));
+  } on FormatException {
+    return value;
   }
 }
 

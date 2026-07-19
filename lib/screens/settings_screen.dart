@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/ai_model.dart';
+import '../models/open_ai_exchange.dart';
 import '../providers/weight_providers.dart';
 
 const _pink = Color(0xFFEF5EA8);
@@ -16,6 +18,11 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mediaQuery = MediaQuery.of(context);
     final settings = ref.watch(appSettingsProvider).valueOrNull;
+    final exchange = ref.watch(latestOpenAiExchangeProvider).valueOrNull;
+    final selectedModel =
+        ref.watch(selectedAiModelProvider).valueOrNull ?? AiModel.defaultModel;
+    final cachedModels =
+        ref.watch(cachedAiModelsProvider).valueOrNull ?? const <AiModel>[];
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFD),
@@ -73,6 +80,56 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   _SettingsTile(
+                    icon: Icons.smart_toy_rounded,
+                    label: 'AIモデル',
+                    value: selectedModel.displayName,
+                    onTap: () => _selectAiModel(
+                      context,
+                      ref,
+                      selectedModel: selectedModel,
+                      models: cachedModels,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _refreshAiModels(context, ref),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('モデル一覧を更新'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    icon: Icons.edit_note_rounded,
+                    label: 'AIコメントプロンプト',
+                    value: '編集',
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AiCommentPromptScreen(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    icon: Icons.http_rounded,
+                    label: '直近のOpenAI通信',
+                    value: exchange == null
+                        ? '未記録'
+                        : exchange.succeeded
+                        ? '成功'
+                        : '失敗',
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            OpenAiExchangeScreen(exchange: exchange),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
                     icon: Icons.key_rounded,
                     label: 'OpenAIキー',
                     value: _maskedKey(settings?.openAiApiKey),
@@ -98,6 +155,67 @@ class SettingsScreen extends ConsumerWidget {
     if (value == null || value.isEmpty) return '';
     final prefix = value.length >= 3 ? value.substring(0, 3) : '';
     return '$prefix••••••••••';
+  }
+
+  Future<void> _selectAiModel(
+    BuildContext context,
+    WidgetRef ref, {
+    required AiModel selectedModel,
+    required List<AiModel> models,
+  }) async {
+    final model = await showDialog<AiModel>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('AIモデルを選択'),
+        children: models.isEmpty
+            ? const [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(24, 8, 24, 20),
+                  child: Text('モデル一覧がありません。「モデル一覧を更新」を押してください。'),
+                ),
+              ]
+            : models
+                  .map(
+                    (model) => SimpleDialogOption(
+                      onPressed: () => Navigator.pop(dialogContext, model),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(model.displayName),
+                        trailing: model == selectedModel
+                            ? const Icon(Icons.check_rounded, color: _pink)
+                            : null,
+                      ),
+                    ),
+                  )
+                  .toList(),
+      ),
+    );
+    if (model == null) return;
+    await ref.read(aiModelPreferencesProvider).saveSelected(model);
+    ref.invalidate(selectedAiModelProvider);
+  }
+
+  Future<void> _refreshAiModels(BuildContext context, WidgetRef ref) async {
+    final settings = ref.read(appSettingsProvider).valueOrNull;
+    final apiKey = settings?.openAiApiKey;
+    try {
+      final models = await ref
+          .read(openAiModelsServiceProvider)
+          .fetchModels(apiKey: apiKey ?? '');
+      await ref.read(aiModelPreferencesProvider).saveCachedModels(models);
+      ref.invalidate(cachedAiModelsProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${models.length}件のモデルを取得しました。')),
+        );
+      }
+    } on Object catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('モデル一覧を更新できませんでした。\n$error')));
+      }
+    }
   }
 
   Future<void> _editNumber(
@@ -197,6 +315,320 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class AiCommentPromptScreen extends ConsumerStatefulWidget {
+  const AiCommentPromptScreen({super.key});
+
+  @override
+  ConsumerState<AiCommentPromptScreen> createState() =>
+      _AiCommentPromptScreenState();
+}
+
+class _AiCommentPromptScreenState extends ConsumerState<AiCommentPromptScreen> {
+  final _controller = TextEditingController();
+  bool _loading = true;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrompt();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadPrompt() async {
+    try {
+      final prompt = await ref
+          .read(promptRepositoryProvider)
+          .getAiCommentPrompt();
+      if (!mounted) return;
+      _controller.text = prompt;
+      setState(() => _loading = false);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      await _showPromptError(error);
+    }
+  }
+
+  Future<void> _savePrompt() async {
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(promptRepositoryProvider)
+          .saveAiCommentPrompt(_controller.text);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('プロンプトを保存しました。')));
+      }
+    } on Object catch (error) {
+      if (mounted) await _showPromptError(error);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _resetPrompt() async {
+    setState(() => _saving = true);
+    try {
+      final prompt = await ref
+          .read(promptRepositoryProvider)
+          .resetAiCommentPrompt();
+      if (!mounted) return;
+      _controller.text = prompt;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('デフォルトに戻しました。')));
+    } on Object catch (error) {
+      if (mounted) await _showPromptError(error);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _showPromptError(Object error) => showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('エラーが発生しました'),
+      content: SingleChildScrollView(child: SelectableText(error.toString())),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFBFD),
+      appBar: AppBar(
+        title: const Text('AIコメントプロンプト'),
+        backgroundColor: const Color(0xFFFFFBFD),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: TextField(
+                controller: _controller,
+                expands: true,
+                maxLines: null,
+                minLines: null,
+                textAlignVertical: TextAlignVertical.top,
+                decoration: const InputDecoration(
+                  labelText: 'プロンプト',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _loading || _saving ? null : _resetPrompt,
+                child: const Text('デフォルトに戻す'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: _loading || _saving ? null : _savePrompt,
+                child: _saving
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('保存'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class OpenAiExchangeScreen extends StatelessWidget {
+  const OpenAiExchangeScreen({super.key, required this.exchange});
+
+  final OpenAiExchange? exchange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFBFD),
+      appBar: AppBar(
+        title: const Text('直近のOpenAI通信'),
+        backgroundColor: const Color(0xFFFFFBFD),
+      ),
+      body: exchange == null
+          ? const Center(child: Text('まだ通信していません'))
+          : SelectionArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE8F2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: _deepWarning),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '学習・確認用として、リクエストにはAPIキーも表示されます。画面共有やコピー時の取り扱いに注意してください。',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _ExchangeSummary(exchange: exchange!),
+                  const SizedBox(height: 20),
+                  _ExchangeCodeSection(
+                    title: 'Request',
+                    content: exchange!.requestJson,
+                  ),
+                  const SizedBox(height: 20),
+                  _ExchangeCodeSection(
+                    title: 'Response',
+                    content: exchange!.responseBody ?? 'レスポンス本文はありません。',
+                  ),
+                  if (exchange!.errorMessage != null) ...[
+                    const SizedBox(height: 20),
+                    _ExchangeCodeSection(
+                      title: 'Error',
+                      content: exchange!.errorMessage!,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+const _deepWarning = Color(0xFFB45309);
+
+class _ExchangeSummary extends StatelessWidget {
+  const _ExchangeSummary({required this.exchange});
+
+  final OpenAiExchange exchange;
+
+  @override
+  Widget build(BuildContext context) {
+    final local = exchange.requestedAt.toLocal();
+    final timestamp =
+        '${local.year}/${local.month.toString().padLeft(2, '0')}/'
+        '${local.day.toString().padLeft(2, '0')} '
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}:'
+        '${local.second.toString().padLeft(2, '0')}';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _SummaryRow(label: '結果', value: exchange.succeeded ? '成功' : '失敗'),
+            _SummaryRow(label: '実行日時', value: timestamp),
+            _SummaryRow(
+              label: 'HTTPステータス',
+              value: exchange.statusCode?.toString() ?? '取得できませんでした',
+            ),
+            _SummaryRow(
+              label: '応答時間',
+              value: '${exchange.elapsedMilliseconds} ms',
+              isLast: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+  final String label;
+  final String value;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(label, style: const TextStyle(color: _muted)),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ExchangeCodeSection extends StatelessWidget {
+  const _ExchangeCodeSection({required this.title, required this.content});
+  final String title;
+  final String content;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 8),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF202633),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          content,
+          style: const TextStyle(
+            color: Color(0xFFF8FAFC),
+            fontFamily: 'monospace',
+            fontSize: 12,
+            height: 1.45,
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 class _SettingsBackground extends StatelessWidget {
