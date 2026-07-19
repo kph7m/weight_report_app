@@ -131,12 +131,39 @@ DBには保存しない。
 
 # 実装方針
 
-Repositoryパターンを維持する。
+既存のRepositoryパターンとRiverpodによる状態管理を維持する。
 
-既存構成に合わせて以下を追加する。
+AIコメントは日次の体重記録に属するデータとして扱い、既存の`WeightEntry`にnullableなAIコメントを追加する。日付と体重を持つ別の保存Modelは新設しない。
 
-- Model
-- Repository
-- Service
+既存構成に合わせ、AIコメント生成機能を以下の責務に分離する。
 
-既存コードの可読性・保守性を優先して実装する。
+## Model
+
+- `WeightEntry`にAIコメントのnullableフィールドを追加する。
+- Responses APIへ送信するデータは、UIやDBのModelに依存しないリクエストModelとして定義する。
+
+## Repository
+
+- 新しいRepositoryは作成せず、既存の`WeightRepository`を拡張する。
+- AIコメントのアプリ内DBへの保存を担当する。
+- 前日に生成されたAIコメントの取得を担当する。
+- OpenAI Responses APIへの通信は行わない。
+
+## Service
+
+- OpenAI Responses APIへのリクエスト送信とレスポンス解析を担当するServiceを追加する。
+- `previous_response_id`を使用せず、毎回独立したリクエストを送信する。
+- アプリ内DBを直接操作しない。
+
+## Provider
+
+- RepositoryとServiceを画面から利用できるように提供する。
+- AIコメントの生成中・成功・失敗の状態を管理する。
+- API送信データの組み立て、Serviceの呼び出し、成功時のRepositoryへの保存を調停する。
+
+## Screen
+
+- ScreenからOpenAI Responses APIおよびIsarを直接操作しない。
+- Providerの状態を監視し、生成中の入力UI無効化、考え中表示、成功時の画面遷移、失敗時のメッセージ表示のみを担当する。
+
+既存コードの可読性・保守性・テスト容易性を優先して実装する。
