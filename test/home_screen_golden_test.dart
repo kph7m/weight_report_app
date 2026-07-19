@@ -445,8 +445,8 @@ void main() {
       'assets/images/character_report.png',
     );
     expect(find.text('本日の\n体重'), findsOneWidget);
-    expect(find.textContaining('目標体重 75.0kg'), findsOneWidget);
-    expect(find.textContaining('目標まであと 11.3kg'), findsOneWidget);
+    expect(find.textContaining('目標体重 75.0kg'), findsNothing);
+    expect(find.text('目標まであと 11.3kg ですわ！'), findsOneWidget);
     expect(find.textContaining('今日も記録えらいですわっ'), findsNothing);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.bySemanticsLabel('体重入力画面を開く'), findsOneWidget);
@@ -461,6 +461,20 @@ void main() {
           .style
           ?.fontSize,
       32,
+    );
+    expect(
+      tester
+          .widget<Text>(find.textContaining('前日から0.4kg減っていますわ'))
+          .style
+          ?.fontWeight,
+      FontWeight.w400,
+    );
+    expect(
+      tester
+          .widget<Text>(find.textContaining('前日から0.4kg減っていますわ'))
+          .style
+          ?.fontFamily,
+      isNull,
     );
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
     expect(find.textContaining('目標まであと'), findsOneWidget);
