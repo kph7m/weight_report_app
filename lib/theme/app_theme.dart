@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-const appFontFamily = 'Zen Maru Gothic';
+const appFontFamily = 'Noto Sans JP';
+const reportAccentFontFamily = 'Zen Maru Gothic';
 
 ThemeData buildAppTheme() {
   return ThemeData(

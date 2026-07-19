@@ -621,6 +621,7 @@ class _ExchangeCodeSection extends StatelessWidget {
           content,
           style: const TextStyle(
             color: Color(0xFFF8FAFC),
+            fontFamily: 'monospace',
             fontSize: 12,
             height: 1.45,
           ),
