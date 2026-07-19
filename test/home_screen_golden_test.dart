@@ -456,7 +456,8 @@ void main() {
     expect(find.text('🌸 今日のひとこと♪'), findsOneWidget);
     expect(find.textContaining('前日から0.4kg減っていますわ'), findsOneWidget);
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
-    expect(find.textContaining('目標まであと'), findsNWidgets(2));
+    expect(find.textContaining('目標まであと'), findsOneWidget);
+    expect(find.text('目標体重'), findsNothing);
     expect(find.textContaining('※7日平均は'), findsNothing);
     expect(find.byType(SingleChildScrollView), findsNothing);
     await expectLater(
