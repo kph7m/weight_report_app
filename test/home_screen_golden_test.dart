@@ -16,11 +16,11 @@ import 'package:weight_report_app/services/weight_repository.dart';
 import 'package:weight_report_app/services/openai_responses_service.dart';
 import 'package:weight_report_app/services/ai_model_preferences.dart';
 import 'package:weight_report_app/services/prompt_repository.dart';
+import 'package:weight_report_app/theme/app_theme.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
 import 'package:weight_report_app/screens/report_screen.dart';
 import 'package:weight_report_app/screens/settings_screen.dart';
 
-const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
   'assets/images/character_pointing_input.png',
   'assets/images/character_thinking.png',
@@ -47,12 +47,7 @@ Future<void> _pumpHomeScreen(
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFEF5EA8)),
-          fontFamily: _fontFamily,
-          scaffoldBackgroundColor: const Color(0xFFFFF7FB),
-          useMaterial3: true,
-        ),
+        theme: buildAppTheme(),
         home: const HomeScreen(),
       ),
     ),
@@ -434,7 +429,7 @@ void main() {
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFFEF5EA8),
             ),
-            fontFamily: _fontFamily,
+            fontFamily: appFontFamily,
             scaffoldBackgroundColor: const Color(0xFFFFF7FB),
             useMaterial3: true,
           ),
@@ -455,7 +450,7 @@ void main() {
     expect(find.bySemanticsLabel('体重入力アイコン'), findsOneWidget);
     expect(find.text('日付'), findsOneWidget);
     expect(find.textContaining('JST'), findsNothing);
-    expect(find.text('視聴者さん♪'), findsOneWidget);
+    expect(find.text('🌸 今日のひとこと♪'), findsOneWidget);
     expect(find.textContaining('前日から0.4kg減っていますわ'), findsOneWidget);
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
     expect(find.textContaining('目標まであと'), findsOneWidget);
@@ -488,7 +483,7 @@ void main() {
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFFEF5EA8),
             ),
-            fontFamily: _fontFamily,
+            fontFamily: appFontFamily,
             scaffoldBackgroundColor: const Color(0xFFFFF7FB),
             useMaterial3: true,
           ),

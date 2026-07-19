@@ -8,6 +8,7 @@ import 'providers/weight_providers.dart';
 import 'screens/home_screen.dart';
 import 'services/app_error_handler.dart';
 import 'services/prompt_repository.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runZonedGuarded(() {
@@ -48,12 +49,7 @@ class WeightReportApp extends StatelessWidget {
       navigatorKey: appNavigatorKey,
       title: 'Weight Report',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFEF5EA8)),
-        fontFamily: 'Noto Sans JP',
-        scaffoldBackgroundColor: const Color(0xFFFFF7FB),
-        useMaterial3: true,
-      ),
+      theme: buildAppTheme(),
       home: const HomeScreen(),
     );
   }

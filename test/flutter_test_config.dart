@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _testFontFamily = 'Noto Sans JP';
+const _testFontFamily = 'Zen Maru Gothic';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -14,8 +14,8 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
 
 Future<void> _loadNotoSansJp() async {
   final fontLoader = FontLoader(_testFontFamily)
-    ..addFont(rootBundle.load('assets/fonts/NotoSansJP-Regular.ttf'))
-    ..addFont(rootBundle.load('assets/fonts/NotoSansJP-Bold.ttf'));
+    ..addFont(rootBundle.load('assets/fonts/ZenMaruGothic-Regular.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/ZenMaruGothic-Bold.ttf'));
   await fontLoader.load();
 }
 

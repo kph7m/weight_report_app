@@ -67,7 +67,6 @@ class _ReportBody extends StatelessWidget {
                 child: DefaultTextStyle.merge(
                   style: const TextStyle(
                     color: _ink,
-                    fontFamily: 'Noto Sans JP',
                     fontWeight: FontWeight.w700,
                   ),
                   child: Stack(
@@ -193,7 +192,6 @@ class _ReportHeroHeader extends StatelessWidget {
                     text: TextSpan(
                       style: const TextStyle(
                         color: _ink,
-                        fontFamily: 'Noto Sans JP',
                         fontWeight: FontWeight.w900,
                       ),
                       children: [
@@ -504,11 +502,7 @@ class _SummaryCard extends StatelessWidget {
           SizedBox(height: 8 * scale),
           RichText(
             text: TextSpan(
-              style: TextStyle(
-                color: color,
-                fontFamily: 'Noto Sans JP',
-                fontWeight: FontWeight.w900,
-              ),
+              style: TextStyle(color: color, fontWeight: FontWeight.w900),
               children: [
                 TextSpan(
                   text: value,
@@ -662,7 +656,7 @@ class _ViewerMessagePanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '視聴者さん♪',
+            '🌸 今日のひとこと♪',
             style: TextStyle(
               color: _deepPink,
               fontSize: 31 * scale,
