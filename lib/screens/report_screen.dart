@@ -51,6 +51,7 @@ class _ReportBody extends StatelessWidget {
     final remaining = latestWeight == null
         ? null
         : (latestWeight - targetWeightKg).clamp(0, double.infinity).toDouble();
+    final rows = _recentRows(entries);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -78,12 +79,12 @@ class _ReportBody extends StatelessWidget {
                           children: [
                             _ReportHeroHeader(latest: latest, scale: scale),
                             const SizedBox(height: 8),
-                            _TargetWeightArea(
-                              remaining: remaining,
-                              scale: scale,
-                            ),
+                            _TargetWeightHeader(scale: scale),
+                            const SizedBox(height: 8),
+                            _SevenDayTable(rows: rows, scale: scale),
                             const SizedBox(height: 20),
                             _LayeredReportBottomSection(
+                              remaining: remaining,
                               aiComment:
                                   latest?.aiComment ??
                                   generatedComment ??
@@ -102,6 +103,21 @@ class _ReportBody extends StatelessWidget {
         );
       },
     );
+  }
+
+  List<_ReportRowData> _recentRows(List<WeightEntry> source) {
+    final sorted = [...source]..sort((a, b) => b.date.compareTo(a.date));
+    return List.generate(7, (index) {
+      if (index >= sorted.length) return _ReportRowData.empty();
+      final entry = sorted[index];
+      final previous = index + 1 < sorted.length ? sorted[index + 1] : null;
+      return _ReportRowData(
+        date: entry.date,
+        weight: entry.weightKg,
+        diff: previous == null ? null : entry.weightKg - previous.weightKg,
+        average: rollingSevenDayAverage(sorted, index),
+      );
+    });
   }
 }
 
@@ -225,67 +241,48 @@ class _ReportHeroHeader extends StatelessWidget {
   }
 }
 
-class _TargetWeightArea extends StatelessWidget {
-  const _TargetWeightArea({required this.remaining, required this.scale});
+class _TargetWeightHeader extends StatelessWidget {
+  const _TargetWeightHeader({required this.scale});
 
-  final double? remaining;
   final double scale;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      // Matches the combined height formerly occupied by the measured-date
-      // header and seven-day records section.
-      height: 592 * scale,
+      // Matches the combined height of the former measured-date and
+      // seven-day-records title areas.
+      height: 107 * scale,
       child: Stack(
+        alignment: Alignment.center,
         children: [
           Positioned.fill(
+            right: 140 * scale,
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F6),
-                borderRadius: BorderRadius.circular(18 * scale),
-                border: Border.all(color: const Color(0xFFFF8DB8), width: 2),
+                color: const Color(0xFFFFE4EF),
+                borderRadius: BorderRadius.circular(12 * scale),
+                border: Border.all(color: const Color(0xFFFF9BC2), width: 2),
               ),
-              child: Column(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.gps_fixed, color: _deepPink, size: 68 * scale),
-                  SizedBox(height: 16 * scale),
+                  Icon(Icons.gps_fixed, color: _deepPink, size: 38 * scale),
+                  SizedBox(width: 12 * scale),
                   Text(
                     '目標体重',
                     style: TextStyle(
                       color: _deepPink,
-                      fontSize: 44 * scale,
+                      fontSize: 30 * scale,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  SizedBox(height: 12 * scale),
+                  SizedBox(width: 28 * scale),
                   Text(
                     '75.0kg',
                     style: TextStyle(
                       color: _deepPink,
-                      fontSize: 112 * scale,
+                      fontSize: 52 * scale,
                       fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  SizedBox(height: 18 * scale),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 44 * scale,
-                      vertical: 12 * scale,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(999 * scale),
-                      border: Border.all(color: const Color(0xFFFFC1D8)),
-                    ),
-                    child: Text(
-                      '目標まであと ${_formatNumber(remaining)}kg',
-                      style: TextStyle(
-                        color: _deepPink,
-                        fontSize: 27 * scale,
-                        fontWeight: FontWeight.w900,
-                      ),
                     ),
                   ),
                 ],
@@ -294,11 +291,68 @@ class _TargetWeightArea extends StatelessWidget {
           ),
           Positioned(
             right: 14 * scale,
-            top: 14 * scale,
             child: _WeightInputShortcutButton(scale: scale),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SevenDayTable extends StatelessWidget {
+  const _SevenDayTable({required this.rows, required this.scale});
+
+  final List<_ReportRowData> rows;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10 * scale),
+      child: Table(
+        border: TableBorder.all(color: const Color(0xFFFFD5E4)),
+        columnWidths: const {
+          0: FlexColumnWidth(1.55),
+          1: FlexColumnWidth(1.15),
+          2: FlexColumnWidth(1.05),
+          3: FlexColumnWidth(1.75),
+        },
+        children: [
+          _tableRow([
+            Text('日付'),
+            Text('体重'),
+            Text('前日比'),
+            Text('7日平均\n（その日を含む過去7日間平均）'),
+          ], isHeader: true),
+          ...rows.map((row) => _tableRow(row.cells)),
+        ],
+      ),
+    );
+  }
+
+  TableRow _tableRow(List<Widget> cells, {bool isHeader = false}) {
+    return TableRow(
+      decoration: BoxDecoration(color: isHeader ? _reportPink : Colors.white),
+      children: cells
+          .map(
+            (cell) => Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 5 * scale,
+                vertical: isHeader ? 9 * scale : 12 * scale,
+              ),
+              child: DefaultTextStyle.merge(
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isHeader ? Colors.white : _ink,
+                  fontSize: isHeader ? 20 * scale : 25 * scale,
+                  height: 1.18,
+                  fontWeight: isHeader ? FontWeight.w900 : FontWeight.w700,
+                ),
+                child: cell,
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -333,12 +387,137 @@ class _WeightInputShortcutButton extends StatelessWidget {
   }
 }
 
+class _SummaryCards extends StatelessWidget {
+  const _SummaryCards({required this.remaining, required this.scale});
+
+  final double? remaining;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      _SummaryCard(
+        icon: Icons.gps_fixed,
+        title: '目標体重',
+        value: '75.0',
+        unit: 'kg',
+        footer: '目標まであと\n${_formatNumber(remaining)}kg',
+        color: _deepPink,
+        scale: scale,
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 560) {
+          return Column(children: [cards[0]]);
+        }
+        return Row(
+          children: [
+            Expanded(child: cards[0]),
+            const Spacer(),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.unit,
+    required this.footer,
+    required this.color,
+    required this.scale,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+  final String unit;
+  final String footer;
+  final Color color;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(14 * scale),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: color.withValues(alpha: 0.26)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 31 * scale),
+              SizedBox(width: 8 * scale),
+              Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 21 * scale,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8 * scale),
+          RichText(
+            text: TextSpan(
+              style: TextStyle(color: color, fontWeight: FontWeight.w900),
+              children: [
+                TextSpan(
+                  text: value,
+                  style: TextStyle(fontSize: 54 * scale),
+                ),
+                TextSpan(
+                  text: unit,
+                  style: TextStyle(fontSize: 26 * scale),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 8 * scale),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 8 * scale),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(8 * scale),
+              border: Border.all(color: color.withValues(alpha: 0.16)),
+            ),
+            child: Text(
+              footer,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: color,
+                fontSize: 18 * scale,
+                fontWeight: FontWeight.w900,
+                height: 1.25,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _LayeredReportBottomSection extends StatelessWidget {
   const _LayeredReportBottomSection({
+    required this.remaining,
     required this.aiComment,
     required this.scale,
   });
 
+  final double? remaining;
   final String aiComment;
   final double scale;
 
@@ -347,11 +526,19 @@ class _LayeredReportBottomSection extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final messageWidth = constraints.maxWidth * 0.52;
+        final cardWidth = constraints.maxWidth * 0.52;
+
         return SizedBox(
           height: 760 * scale,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                width: cardWidth,
+                child: _SummaryCards(remaining: remaining, scale: scale),
+              ),
               Positioned(
                 right: 0,
                 bottom: 0,
@@ -361,7 +548,7 @@ class _LayeredReportBottomSection extends StatelessWidget {
               ),
               Positioned(
                 left: 0,
-                top: 0,
+                top: 244 * scale,
                 width: messageWidth,
                 child: _ViewerMessagePanel(aiComment: aiComment, scale: scale),
               ),
@@ -477,5 +664,53 @@ class _Sparkle extends StatelessWidget {
   }
 }
 
+class _ReportRowData {
+  const _ReportRowData({this.date, this.weight, this.diff, this.average});
+  const _ReportRowData.empty()
+    : date = null,
+      weight = null,
+      diff = null,
+      average = null;
+
+  final DateTime? date;
+  final double? weight;
+  final double? diff;
+  final double? average;
+
+  List<Widget> get cells => [
+    Text(date == null ? '--' : _formatJstDate(date!)),
+    Text(weight == null ? '--' : '${weight!.toStringAsFixed(1)}kg'),
+    Text(
+      _formatSigned(diff),
+      style: TextStyle(
+        color: diff == null
+            ? const Color(0xFF4B5563)
+            : diff! > 0
+            ? _deepPink
+            : diff! < 0
+            ? _blue
+            : const Color(0xFF4B5563),
+      ),
+    ),
+    Text(
+      average == null ? '--' : '${average!.toStringAsFixed(2)}kg',
+      style: const TextStyle(color: _deepPink),
+    ),
+  ];
+}
+
 String _formatNumber(double? value) =>
     value == null ? '--' : value.toStringAsFixed(1);
+String _formatSigned(double? value) => value == null
+    ? '±0.0'
+    : '${value > 0
+          ? '+'
+          : value < 0
+          ? '−'
+          : '±'}${value.abs().toStringAsFixed(1)}';
+
+String _formatJstDate(DateTime date) {
+  const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
+  final weekday = weekdays[date.weekday - 1];
+  return '${date.year}/${date.month}/${date.day}（$weekday）';
+}
