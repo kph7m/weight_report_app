@@ -522,29 +522,14 @@ class _ViewerMessagePanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(20 * scale),
         border: Border.all(color: const Color(0xFFFF8DB8), width: 2),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '🌸 今日のひとこと♪',
-            style: TextStyle(
-              fontFamily: reportAccentFontFamily,
-              color: _deepPink,
-              fontSize: 31 * scale,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          SizedBox(height: 14 * scale),
-          Text(
-            aiComment,
-            style: TextStyle(
-              fontFamily: reportAccentFontFamily,
-              fontSize: 21 * scale,
-              height: 1.65,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
+      child: Text(
+        aiComment,
+        style: TextStyle(
+          fontFamily: reportAccentFontFamily,
+          fontSize: 32 * scale,
+          height: 1.65,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
