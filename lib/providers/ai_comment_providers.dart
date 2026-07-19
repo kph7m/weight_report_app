@@ -104,6 +104,9 @@ class AiCommentController extends StateNotifier<AiCommentGenerationState> {
             apiKey: apiKey,
             model: (await _ref.read(aiModelPreferencesProvider).loadSelected())
                 .apiName,
+            instructions: await _ref
+                .read(promptRepositoryProvider)
+                .getAiCommentPrompt(),
             request: request,
             onExchange: (exchange) => repository.saveLatestOpenAiExchange(
               OpenAiExchange(

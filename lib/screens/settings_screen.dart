@@ -101,6 +101,18 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   _SettingsTile(
+                    icon: Icons.edit_note_rounded,
+                    label: 'AIコメントプロンプト',
+                    value: '編集',
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AiCommentPromptScreen(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
                     icon: Icons.http_rounded,
                     label: '直近のOpenAI通信',
                     value: exchange == null
@@ -300,6 +312,150 @@ class SettingsScreen extends ConsumerWidget {
             child: const Text('保存'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AiCommentPromptScreen extends ConsumerStatefulWidget {
+  const AiCommentPromptScreen({super.key});
+
+  @override
+  ConsumerState<AiCommentPromptScreen> createState() =>
+      _AiCommentPromptScreenState();
+}
+
+class _AiCommentPromptScreenState extends ConsumerState<AiCommentPromptScreen> {
+  final _controller = TextEditingController();
+  bool _loading = true;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrompt();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadPrompt() async {
+    try {
+      final prompt = await ref
+          .read(promptRepositoryProvider)
+          .getAiCommentPrompt();
+      if (!mounted) return;
+      _controller.text = prompt;
+      setState(() => _loading = false);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      await _showPromptError(error);
+    }
+  }
+
+  Future<void> _savePrompt() async {
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(promptRepositoryProvider)
+          .saveAiCommentPrompt(_controller.text);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('プロンプトを保存しました。')));
+      }
+    } on Object catch (error) {
+      if (mounted) await _showPromptError(error);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _resetPrompt() async {
+    setState(() => _saving = true);
+    try {
+      final prompt = await ref
+          .read(promptRepositoryProvider)
+          .resetAiCommentPrompt();
+      if (!mounted) return;
+      _controller.text = prompt;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('デフォルトに戻しました。')));
+    } on Object catch (error) {
+      if (mounted) await _showPromptError(error);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _showPromptError(Object error) => showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('エラーが発生しました'),
+      content: SingleChildScrollView(child: SelectableText(error.toString())),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFBFD),
+      appBar: AppBar(
+        title: const Text('AIコメントプロンプト'),
+        backgroundColor: const Color(0xFFFFFBFD),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: TextField(
+                controller: _controller,
+                expands: true,
+                maxLines: null,
+                minLines: null,
+                textAlignVertical: TextAlignVertical.top,
+                decoration: const InputDecoration(
+                  labelText: 'プロンプト',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _loading || _saving ? null : _resetPrompt,
+                child: const Text('デフォルトに戻す'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: _loading || _saving ? null : _savePrompt,
+                child: _saving
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('保存'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

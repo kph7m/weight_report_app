@@ -7,8 +7,13 @@ import '../models/weight_entry.dart';
 import '../services/weight_repository.dart';
 import '../services/ai_model_preferences.dart';
 import '../services/openai_models_service.dart';
+import '../services/prompt_repository.dart';
 
 const targetWeightKg = 75.0;
+
+final promptRepositoryProvider = Provider<PromptRepository>((ref) {
+  return PromptRepository();
+});
 
 final aiModelPreferencesProvider = Provider<AiModelPreferences>((ref) {
   return AiModelPreferences();
