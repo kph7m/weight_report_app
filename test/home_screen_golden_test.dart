@@ -8,6 +8,7 @@ import 'package:weight_report_app/providers/weight_providers.dart';
 import 'package:weight_report_app/services/weight_repository.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
 import 'package:weight_report_app/screens/report_screen.dart';
+import 'package:weight_report_app/screens/settings_screen.dart';
 
 const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
@@ -108,6 +109,28 @@ void main() {
       find.byType(HomeScreen),
       matchesGoldenFile('../docs/screenshots/home-screen.png'),
     );
+  });
+
+  testWidgets('opens settings screen and returns home', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpHomeScreen(tester);
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.text('身長'), findsOneWidget);
+    expect(find.text('目標体重'), findsOneWidget);
+    expect(find.text('OpenAIキー'), findsOneWidget);
+    await expectLater(
+      find.byType(SettingsScreen),
+      matchesGoldenFile('../docs/screenshots/settings-screen.png'),
+    );
+
+    await tester.tap(find.byTooltip('戻る'));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('shows thinking character after weight input reaches 30.0', (
