@@ -1,19 +1,16 @@
-enum AiModel {
-  gpt56Sol('GPT-5.6 Sol', 'gpt-5.6'),
-  gpt56Terra('GPT-5.6 Terra', 'gpt-5.6-terra'),
-  gpt56Luna('GPT-5.6 Luna', 'gpt-5.6-luna'),
-  gpt55('GPT-5.5', 'gpt-5.5'),
-  gpt55Instant('GPT-5.5 Instant', 'gpt-5.5-instant');
+class AiModel {
+  const AiModel(this.apiName);
 
-  const AiModel(this.displayName, this.apiName);
+  static const defaultModel = AiModel('gpt-5.5-instant');
 
-  final String displayName;
   final String apiName;
 
-  static const defaultModel = AiModel.gpt55Instant;
+  String get displayName => apiName;
 
-  static AiModel fromApiName(String? value) => values.firstWhere(
-    (model) => model.apiName == value,
-    orElse: () => defaultModel,
-  );
+  @override
+  bool operator ==(Object other) =>
+      other is AiModel && apiName == other.apiName;
+
+  @override
+  int get hashCode => apiName.hashCode;
 }

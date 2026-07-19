@@ -6,6 +6,7 @@ import '../models/open_ai_exchange.dart';
 import '../models/weight_entry.dart';
 import '../services/weight_repository.dart';
 import '../services/ai_model_preferences.dart';
+import '../services/openai_models_service.dart';
 
 const targetWeightKg = 75.0;
 
@@ -14,7 +15,15 @@ final aiModelPreferencesProvider = Provider<AiModelPreferences>((ref) {
 });
 
 final selectedAiModelProvider = FutureProvider<AiModel>((ref) {
-  return ref.watch(aiModelPreferencesProvider).load();
+  return ref.watch(aiModelPreferencesProvider).loadSelected();
+});
+
+final cachedAiModelsProvider = FutureProvider<List<AiModel>>((ref) {
+  return ref.watch(aiModelPreferencesProvider).loadCachedModels();
+});
+
+final openAiModelsServiceProvider = Provider<OpenAiModelsService>((ref) {
+  return OpenAiModelsService();
 });
 
 final weightRepositoryProvider = FutureProvider<WeightRepository>((ref) {

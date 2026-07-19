@@ -173,7 +173,7 @@ void main() {
     expect(find.text('身長'), findsOneWidget);
     expect(find.text('目標体重'), findsOneWidget);
     expect(find.text('AIモデル'), findsOneWidget);
-    expect(find.text('GPT-5.5 Instant'), findsOneWidget);
+    expect(find.text('gpt-5.5-instant'), findsOneWidget);
     expect(find.text('OpenAIキー'), findsOneWidget);
     expect(find.textContaining('182.0'), findsNothing);
     expect(find.textContaining('75.0'), findsNothing);
@@ -192,6 +192,9 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
+    SharedPreferences.setMockInitialValues({
+      AiModelPreferences.cachedModelsKey: ['gpt-5.5-instant', 'gpt-5.6-terra'],
+    });
     await _pumpHomeScreen(tester);
     await tester.tap(find.byTooltip('設定'));
     await tester.pumpAndSettle();
@@ -199,12 +202,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('AIモデルを選択'), findsOneWidget);
-    expect(find.text('GPT-5.6 Terra'), findsOneWidget);
-    await tester.tap(find.text('GPT-5.6 Terra'));
+    expect(find.text('gpt-5.6-terra'), findsOneWidget);
+    await tester.tap(find.text('gpt-5.6-terra'));
     await tester.pumpAndSettle();
 
-    expect(find.text('GPT-5.6 Terra'), findsOneWidget);
-    expect(await AiModelPreferences().load(), AiModel.gpt56Terra);
+    expect(find.text('gpt-5.6-terra'), findsOneWidget);
+    expect(
+      await AiModelPreferences().loadSelected(),
+      const AiModel('gpt-5.6-terra'),
+    );
   });
 
   testWidgets('saves an entered setting through the app repository', (

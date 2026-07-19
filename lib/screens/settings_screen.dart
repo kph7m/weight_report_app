@@ -21,6 +21,8 @@ class SettingsScreen extends ConsumerWidget {
     final exchange = ref.watch(latestOpenAiExchangeProvider).valueOrNull;
     final selectedModel =
         ref.watch(selectedAiModelProvider).valueOrNull ?? AiModel.defaultModel;
+    final cachedModels =
+        ref.watch(cachedAiModelsProvider).valueOrNull ?? const <AiModel>[];
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFD),
@@ -85,6 +87,16 @@ class SettingsScreen extends ConsumerWidget {
                       context,
                       ref,
                       selectedModel: selectedModel,
+                      models: cachedModels,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _refreshAiModels(context, ref),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('モデル一覧を更新'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -137,31 +149,61 @@ class SettingsScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref, {
     required AiModel selectedModel,
+    required List<AiModel> models,
   }) async {
     final model = await showDialog<AiModel>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
         title: const Text('AIモデルを選択'),
-        children: AiModel.values
-            .map(
-              (model) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(dialogContext, model),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(model.displayName),
-                  subtitle: Text(model.apiName),
-                  trailing: model == selectedModel
-                      ? const Icon(Icons.check_rounded, color: _pink)
-                      : null,
+        children: models.isEmpty
+            ? const [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(24, 8, 24, 20),
+                  child: Text('モデル一覧がありません。「モデル一覧を更新」を押してください。'),
                 ),
-              ),
-            )
-            .toList(),
+              ]
+            : models
+                  .map(
+                    (model) => SimpleDialogOption(
+                      onPressed: () => Navigator.pop(dialogContext, model),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(model.displayName),
+                        trailing: model == selectedModel
+                            ? const Icon(Icons.check_rounded, color: _pink)
+                            : null,
+                      ),
+                    ),
+                  )
+                  .toList(),
       ),
     );
     if (model == null) return;
-    await ref.read(aiModelPreferencesProvider).save(model);
+    await ref.read(aiModelPreferencesProvider).saveSelected(model);
     ref.invalidate(selectedAiModelProvider);
+  }
+
+  Future<void> _refreshAiModels(BuildContext context, WidgetRef ref) async {
+    final settings = ref.read(appSettingsProvider).valueOrNull;
+    final apiKey = settings?.openAiApiKey;
+    try {
+      final models = await ref
+          .read(openAiModelsServiceProvider)
+          .fetchModels(apiKey: apiKey ?? '');
+      await ref.read(aiModelPreferencesProvider).saveCachedModels(models);
+      ref.invalidate(cachedAiModelsProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${models.length}件のモデルを取得しました。')),
+        );
+      }
+    } on Object catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('モデル一覧を更新できませんでした。\n$error')));
+      }
+    }
   }
 
   Future<void> _editNumber(

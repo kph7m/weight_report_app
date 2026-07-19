@@ -9,21 +9,33 @@ void main() {
   });
 
   test('uses GPT-5.5 Instant when no model has been saved', () async {
-    expect(await AiModelPreferences().load(), AiModel.gpt55Instant);
+    expect(await AiModelPreferences().loadSelected(), AiModel.defaultModel);
   });
 
   test('restores the selected model', () async {
     final preferences = AiModelPreferences();
-    await preferences.save(AiModel.gpt56Terra);
+    const model = AiModel('gpt-test-chat');
+    await preferences.saveSelected(model);
 
-    expect(await AiModelPreferences().load(), AiModel.gpt56Terra);
+    expect(await AiModelPreferences().loadSelected(), model);
   });
 
-  test('falls back to the default for an unknown saved model', () async {
+  test('restores a model id supplied by the API', () async {
     SharedPreferences.setMockInitialValues({
-      'selected_ai_model': 'removed-model',
+      AiModelPreferences.selectedModelKey: 'server-provided-model',
     });
 
-    expect(await AiModelPreferences().load(), AiModel.defaultModel);
+    expect(
+      await AiModelPreferences().loadSelected(),
+      const AiModel('server-provided-model'),
+    );
+  });
+
+  test('stores and restores the cached model list', () async {
+    final preferences = AiModelPreferences();
+    const models = [AiModel('gpt-a'), AiModel('gpt-b')];
+    await preferences.saveCachedModels(models);
+
+    expect(await AiModelPreferences().loadCachedModels(), models);
   });
 }
