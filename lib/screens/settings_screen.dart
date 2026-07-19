@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/open_ai_exchange.dart';
 import '../providers/weight_providers.dart';
 
 const _pink = Color(0xFFEF5EA8);
@@ -16,6 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mediaQuery = MediaQuery.of(context);
     final settings = ref.watch(appSettingsProvider).valueOrNull;
+    final exchange = ref.watch(latestOpenAiExchangeProvider).valueOrNull;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFD),
@@ -69,6 +71,23 @@ class SettingsScreen extends ConsumerWidget {
                         );
                         await repository.saveTargetWeight(value);
                       },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
+                    icon: Icons.http_rounded,
+                    label: '直近のOpenAI通信',
+                    value: exchange == null
+                        ? '未記録'
+                        : exchange.succeeded
+                        ? '成功'
+                        : '失敗',
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            OpenAiExchangeScreen(exchange: exchange),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -197,6 +216,176 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class OpenAiExchangeScreen extends StatelessWidget {
+  const OpenAiExchangeScreen({super.key, required this.exchange});
+
+  final OpenAiExchange? exchange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFBFD),
+      appBar: AppBar(
+        title: const Text('直近のOpenAI通信'),
+        backgroundColor: const Color(0xFFFFFBFD),
+      ),
+      body: exchange == null
+          ? const Center(child: Text('まだ通信していません'))
+          : SelectionArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE8F2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: _deepWarning),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '学習・確認用として、リクエストにはAPIキーも表示されます。画面共有やコピー時の取り扱いに注意してください。',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _ExchangeSummary(exchange: exchange!),
+                  const SizedBox(height: 20),
+                  _ExchangeCodeSection(
+                    title: 'Request',
+                    content: exchange!.requestJson,
+                  ),
+                  const SizedBox(height: 20),
+                  _ExchangeCodeSection(
+                    title: 'Response',
+                    content: exchange!.responseBody ?? 'レスポンス本文はありません。',
+                  ),
+                  if (exchange!.errorMessage != null) ...[
+                    const SizedBox(height: 20),
+                    _ExchangeCodeSection(
+                      title: 'Error',
+                      content: exchange!.errorMessage!,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+const _deepWarning = Color(0xFFB45309);
+
+class _ExchangeSummary extends StatelessWidget {
+  const _ExchangeSummary({required this.exchange});
+
+  final OpenAiExchange exchange;
+
+  @override
+  Widget build(BuildContext context) {
+    final local = exchange.requestedAt.toLocal();
+    final timestamp =
+        '${local.year}/${local.month.toString().padLeft(2, '0')}/'
+        '${local.day.toString().padLeft(2, '0')} '
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}:'
+        '${local.second.toString().padLeft(2, '0')}';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _SummaryRow(label: '結果', value: exchange.succeeded ? '成功' : '失敗'),
+            _SummaryRow(label: '実行日時', value: timestamp),
+            _SummaryRow(
+              label: 'HTTPステータス',
+              value: exchange.statusCode?.toString() ?? '取得できませんでした',
+            ),
+            _SummaryRow(
+              label: '応答時間',
+              value: '${exchange.elapsedMilliseconds} ms',
+              isLast: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+  final String label;
+  final String value;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(label, style: const TextStyle(color: _muted)),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ExchangeCodeSection extends StatelessWidget {
+  const _ExchangeCodeSection({required this.title, required this.content});
+  final String title;
+  final String content;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 8),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF202633),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          content,
+          style: const TextStyle(
+            color: Color(0xFFF8FAFC),
+            fontFamily: 'monospace',
+            fontSize: 12,
+            height: 1.45,
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 class _SettingsBackground extends StatelessWidget {
