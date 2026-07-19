@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weight_report_app/models/weight_entry.dart';
+import 'package:weight_report_app/models/app_settings.dart';
 import 'package:weight_report_app/providers/weight_providers.dart';
 import 'package:weight_report_app/services/weight_repository.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
@@ -65,6 +66,7 @@ class _FakeWeightRepository implements WeightRepository {
 
   final Object? saveError;
   final savedWeights = <double>[];
+  final savedHeights = <double?>[];
 
   @override
   Future<void> saveToday(double weightKg) async {
@@ -76,6 +78,14 @@ class _FakeWeightRepository implements WeightRepository {
 
   @override
   Stream<List<WeightEntry>> watchEntries() => Stream.value(const []);
+
+  @override
+  Stream<AppSettings?> watchSettings() => Stream.value(null);
+
+  @override
+  Future<void> saveHeight(double? heightCm) async {
+    savedHeights.add(heightCm);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -123,6 +133,9 @@ void main() {
     expect(find.text('身長'), findsOneWidget);
     expect(find.text('目標体重'), findsOneWidget);
     expect(find.text('OpenAIキー'), findsOneWidget);
+    expect(find.textContaining('182.0'), findsNothing);
+    expect(find.textContaining('75.0'), findsNothing);
+    expect(find.textContaining('sk-'), findsNothing);
     await expectLater(
       find.byType(SettingsScreen),
       matchesGoldenFile('../docs/screenshots/settings-screen.png'),
@@ -131,6 +144,25 @@ void main() {
     await tester.tap(find.byTooltip('戻る'));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('saves an entered setting through the app repository', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _FakeWeightRepository();
+
+    await _pumpHomeScreen(tester, repository: repository);
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('身長'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), '165.5');
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect(repository.savedHeights, [165.5]);
   });
 
   testWidgets('shows thinking character after weight input reaches 30.0', (

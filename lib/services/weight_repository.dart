@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/app_settings.dart';
 import '../models/weight_entry.dart';
 
 class WeightRepository {
@@ -10,7 +11,7 @@ class WeightRepository {
 
   final Isar _isar;
 
-  static const _schemas = [WeightEntrySchema];
+  static const _schemas = [WeightEntrySchema, AppSettingsSchema];
 
   static Future<WeightRepository> open() async {
     final directory = await getApplicationDocumentsDirectory();
@@ -86,6 +87,31 @@ class WeightRepository {
       entry.weightKg = weightKg;
       entry.createdAt ??= now;
       await _isar.weightEntries.put(entry);
+    });
+  }
+
+  Stream<AppSettings?> watchSettings() async* {
+    yield await _isar.appSettings.get(AppSettings.settingsId);
+    await for (final _ in _isar.appSettings.watchLazy()) {
+      yield await _isar.appSettings.get(AppSettings.settingsId);
+    }
+  }
+
+  Future<void> saveHeight(double? heightCm) =>
+      _updateSettings((settings) => settings.heightCm = heightCm);
+
+  Future<void> saveTargetWeight(double? targetWeightKg) =>
+      _updateSettings((settings) => settings.targetWeightKg = targetWeightKg);
+
+  Future<void> saveOpenAiApiKey(String? openAiApiKey) =>
+      _updateSettings((settings) => settings.openAiApiKey = openAiApiKey);
+
+  Future<void> _updateSettings(void Function(AppSettings) update) async {
+    await _isar.writeTxn(() async {
+      final settings =
+          await _isar.appSettings.get(AppSettings.settingsId) ?? AppSettings();
+      update(settings);
+      await _isar.appSettings.put(settings);
     });
   }
 }
