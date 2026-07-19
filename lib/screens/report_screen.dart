@@ -47,10 +47,6 @@ class _ReportBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final latest = entries.isNotEmpty ? entries.first : null;
-    final latestWeight = latest?.weightKg;
-    final remaining = latestWeight == null
-        ? null
-        : (latestWeight - targetWeightKg).clamp(0, double.infinity).toDouble();
     final rows = _recentRows(entries);
 
     return LayoutBuilder(
@@ -84,7 +80,6 @@ class _ReportBody extends StatelessWidget {
                             _SevenDayTable(rows: rows, scale: scale),
                             const SizedBox(height: 20),
                             _LayeredReportBottomSection(
-                              remaining: remaining,
                               aiComment:
                                   latest?.aiComment ??
                                   generatedComment ??
@@ -387,137 +382,12 @@ class _WeightInputShortcutButton extends StatelessWidget {
   }
 }
 
-class _SummaryCards extends StatelessWidget {
-  const _SummaryCards({required this.remaining, required this.scale});
-
-  final double? remaining;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      _SummaryCard(
-        icon: Icons.gps_fixed,
-        title: '目標体重',
-        value: '75.0',
-        unit: 'kg',
-        footer: '目標まであと\n${_formatNumber(remaining)}kg',
-        color: _deepPink,
-        scale: scale,
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 560) {
-          return Column(children: [cards[0]]);
-        }
-        return Row(
-          children: [
-            Expanded(child: cards[0]),
-            const Spacer(),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.unit,
-    required this.footer,
-    required this.color,
-    required this.scale,
-  });
-
-  final IconData icon;
-  final String title;
-  final String value;
-  final String unit;
-  final String footer;
-  final Color color;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(14 * scale),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: color.withValues(alpha: 0.26)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 31 * scale),
-              SizedBox(width: 8 * scale),
-              Text(
-                title,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 21 * scale,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8 * scale),
-          RichText(
-            text: TextSpan(
-              style: TextStyle(color: color, fontWeight: FontWeight.w900),
-              children: [
-                TextSpan(
-                  text: value,
-                  style: TextStyle(fontSize: 54 * scale),
-                ),
-                TextSpan(
-                  text: unit,
-                  style: TextStyle(fontSize: 26 * scale),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 8 * scale),
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 8 * scale),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.45),
-              borderRadius: BorderRadius.circular(8 * scale),
-              border: Border.all(color: color.withValues(alpha: 0.16)),
-            ),
-            child: Text(
-              footer,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: color,
-                fontSize: 18 * scale,
-                fontWeight: FontWeight.w900,
-                height: 1.25,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _LayeredReportBottomSection extends StatelessWidget {
   const _LayeredReportBottomSection({
-    required this.remaining,
     required this.aiComment,
     required this.scale,
   });
 
-  final double? remaining;
   final String aiComment;
   final double scale;
 
@@ -526,19 +396,11 @@ class _LayeredReportBottomSection extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final messageWidth = constraints.maxWidth * 0.52;
-        final cardWidth = constraints.maxWidth * 0.52;
-
         return SizedBox(
           height: 760 * scale,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Positioned(
-                left: 0,
-                top: 0,
-                width: cardWidth,
-                child: _SummaryCards(remaining: remaining, scale: scale),
-              ),
               Positioned(
                 right: 0,
                 bottom: 0,
@@ -548,8 +410,9 @@ class _LayeredReportBottomSection extends StatelessWidget {
               ),
               Positioned(
                 left: 0,
-                top: 244 * scale,
+                top: 0,
                 width: messageWidth,
+                height: 500 * scale,
                 child: _ViewerMessagePanel(aiComment: aiComment, scale: scale),
               ),
             ],
@@ -699,8 +562,6 @@ class _ReportRowData {
   ];
 }
 
-String _formatNumber(double? value) =>
-    value == null ? '--' : value.toStringAsFixed(1);
 String _formatSigned(double? value) => value == null
     ? '±0.0'
     : '${value > 0
