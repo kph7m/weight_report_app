@@ -455,6 +455,14 @@ void main() {
     expect(find.textContaining('JST'), findsNothing);
     expect(find.text('🌸 今日のひとこと♪'), findsOneWidget);
     expect(find.textContaining('前日から0.4kg減っていますわ'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('🌸 今日のひとこと♪')).style?.fontSize, 31);
+    expect(
+      tester
+          .widget<Text>(find.textContaining('前日から0.4kg減っていますわ'))
+          .style
+          ?.fontSize,
+      21,
+    );
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
     expect(find.textContaining('目標まであと'), findsOneWidget);
     expect(find.text('目標体重'), findsNothing);

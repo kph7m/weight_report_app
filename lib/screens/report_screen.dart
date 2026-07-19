@@ -539,7 +539,7 @@ class _ViewerMessagePanel extends StatelessWidget {
             aiComment,
             style: TextStyle(
               fontFamily: reportAccentFontFamily,
-              fontSize: 18 * scale,
+              fontSize: 21 * scale,
               height: 1.65,
               fontWeight: FontWeight.w900,
             ),
