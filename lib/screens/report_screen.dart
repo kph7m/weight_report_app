@@ -154,6 +154,9 @@ class _ReportHeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final weight = latest?.weightKg;
+    final remaining = weight == null
+        ? null
+        : (weight - targetWeightKg).clamp(0, double.infinity).toDouble();
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: 18 * scale,
@@ -226,7 +229,8 @@ class _ReportHeroHeader extends StatelessWidget {
               Icon(Icons.local_florist, color: _reportPink, size: 34 * scale),
               Expanded(
                 child: Text(
-                  '今日も記録えらいですわっ♪ 継続が一番の近道ですの！',
+                  '目標体重 ${targetWeightKg.toStringAsFixed(1)}kg　'
+                  '目標まであと ${remaining?.toStringAsFixed(1) ?? '--.-'}kg',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: reportAccentFontFamily,
