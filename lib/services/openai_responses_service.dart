@@ -37,8 +37,15 @@ class OpenAiResponsesService {
       ).timeout(timeout);
     } on AiCommentGenerationException {
       rethrow;
-    } on Object {
-      throw const AiCommentGenerationException();
+    } on TimeoutException catch (error) {
+      throw AiCommentGenerationException(
+        'Responses API timed out after ${timeout.inSeconds} seconds. '
+        'Details: $error',
+      );
+    } on Object catch (error) {
+      throw AiCommentGenerationException(
+        'Responses API request failed. Details: $error',
+      );
     }
   }
 
@@ -46,7 +53,11 @@ class OpenAiResponsesService {
     required String apiKey,
     required AiCommentRequest request,
   }) async {
-    if (apiKey.trim().isEmpty) throw const AiCommentGenerationException();
+    if (apiKey.trim().isEmpty) {
+      throw const AiCommentGenerationException(
+        'OpenAI API key is not configured.',
+      );
+    }
 
     try {
       final systemPrompt = await rootBundle.loadString(_systemPromptAsset);
@@ -67,7 +78,10 @@ class OpenAiResponsesService {
       final response = await httpRequest.close().timeout(timeout);
       final body = await utf8.decoder.bind(response).join().timeout(timeout);
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw const AiCommentGenerationException();
+        throw AiCommentGenerationException(
+          'Responses API returned HTTP ${response.statusCode}. '
+          'Response: ${_logExcerpt(body)}',
+        );
       }
 
       return validateAndNormalizeAiComment(
@@ -75,8 +89,12 @@ class OpenAiResponsesService {
       );
     } on AiCommentGenerationException {
       rethrow;
-    } on Object {
-      throw const AiCommentGenerationException();
+    } on TimeoutException {
+      rethrow;
+    } on Object catch (error) {
+      throw AiCommentGenerationException(
+        'Responses API response processing failed. Details: $error',
+      );
     }
   }
 
@@ -98,6 +116,13 @@ class OpenAiResponsesService {
     }
     return null;
   }
+}
+
+String _logExcerpt(String value) {
+  const maxLength = 4000;
+  return value.length <= maxLength
+      ? value
+      : '${value.substring(0, maxLength)}…';
 }
 
 String validateAndNormalizeAiComment(String? value) {

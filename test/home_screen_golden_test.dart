@@ -291,7 +291,7 @@ void main() {
     },
   );
 
-  testWidgets('shows fallback comment and does not save it on API failure', (
+  testWidgets('shows error log dialog and fallback comment on API failure', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -301,6 +301,18 @@ void main() {
     await _pumpHomeScreen(tester, repository: repository);
     await tester.enterText(find.byType(TextFormField), '78.0');
     tester.binding.focusManager.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+
+    expect(find.text('エラーが発生しました'), findsOneWidget);
+    expect(
+      find.textContaining('OpenAI API key is not configured.'),
+      findsOneWidget,
+    );
+    await expectLater(
+      find.byType(AlertDialog),
+      matchesGoldenFile('../docs/screenshots/ai-comment-error-dialog.png'),
+    );
+    await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
 
     expect(find.byType(ReportScreen), findsOneWidget);

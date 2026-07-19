@@ -101,7 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _isCelebrating = true;
       });
-      await ref
+      final generationState = await ref
           .read(aiCommentControllerProvider.notifier)
           .generate(
             weightKg: weight,
@@ -110,6 +110,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const <WeightEntry>[],
           );
       if (!mounted) return;
+
+      if (generationState.status == AiCommentGenerationStatus.failure &&
+          generationState.error != null) {
+        await AppErrorHandler.showErrorDialogForContext(
+          context,
+          generationState.error!,
+          generationState.stackTrace,
+        );
+        if (!mounted) return;
+      }
 
       Navigator.of(
         context,
