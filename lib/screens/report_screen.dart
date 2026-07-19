@@ -224,7 +224,8 @@ class _ReportHeroHeader extends StatelessWidget {
               Icon(Icons.local_florist, color: _reportPink, size: 34 * scale),
               Expanded(
                 child: Text(
-                  '目標まであと ${remaining?.toStringAsFixed(1) ?? '--.-'}kg ですわ！',
+                  '目標体重　${targetWeightKg.toStringAsFixed(1)}kg　'
+                  '目標まであと　${remaining?.toStringAsFixed(1) ?? '--.-'}kg　ですわ！',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: reportAccentFontFamily,
