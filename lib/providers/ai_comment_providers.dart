@@ -10,14 +10,23 @@ const aiCommentFailureMessage = '今日はコメントを生成できません�
 enum AiCommentGenerationStatus { idle, generating, success, failure }
 
 class AiCommentGenerationState {
-  const AiCommentGenerationState(this.status, {this.comment});
+  const AiCommentGenerationState(
+    this.status, {
+    this.comment,
+    this.error,
+    this.stackTrace,
+  });
 
   const AiCommentGenerationState.idle()
     : status = AiCommentGenerationStatus.idle,
-      comment = null;
+      comment = null,
+      error = null,
+      stackTrace = null;
 
   final AiCommentGenerationStatus status;
   final String? comment;
+  final Object? error;
+  final StackTrace? stackTrace;
 }
 
 final openAiResponsesServiceProvider = Provider<OpenAiResponsesService>((ref) {
@@ -48,7 +57,9 @@ class AiCommentController extends StateNotifier<AiCommentGenerationState> {
       final settings = await repository.watchSettings().first;
       final apiKey = settings?.openAiApiKey;
       if (apiKey == null || apiKey.trim().isEmpty) {
-        throw const AiCommentGenerationException();
+        throw const AiCommentGenerationException(
+          'OpenAI API key is not configured.',
+        );
       }
 
       final now = DateTime.now();
@@ -94,10 +105,12 @@ class AiCommentController extends StateNotifier<AiCommentGenerationState> {
         AiCommentGenerationStatus.success,
         comment: comment,
       );
-    } on Object {
-      state = const AiCommentGenerationState(
+    } on Object catch (error, stackTrace) {
+      state = AiCommentGenerationState(
         AiCommentGenerationStatus.failure,
         comment: aiCommentFailureMessage,
+        error: error,
+        stackTrace: stackTrace,
       );
     }
     return state;
