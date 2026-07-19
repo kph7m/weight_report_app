@@ -7,12 +7,12 @@ const _testFontFamily = 'Zen Maru Gothic';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
-  await _loadNotoSansJp();
+  await _loadZenMaruGothic();
   await _loadMaterialIcons();
   await testMain();
 }
 
-Future<void> _loadNotoSansJp() async {
+Future<void> _loadZenMaruGothic() async {
   final fontLoader = FontLoader(_testFontFamily)
     ..addFont(rootBundle.load('assets/fonts/ZenMaruGothic-Regular.ttf'))
     ..addFont(rootBundle.load('assets/fonts/ZenMaruGothic-Bold.ttf'));
