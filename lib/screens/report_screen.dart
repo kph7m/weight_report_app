@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/weight_entry.dart';
+import '../providers/ai_comment_providers.dart';
 import '../providers/weight_providers.dart';
 import 'home_screen.dart';
 
@@ -18,11 +19,15 @@ class ReportScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(weightEntriesProvider);
+    final generationState = ref.watch(aiCommentControllerProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFD),
       body: SafeArea(
         child: entriesAsync.when(
-          data: (entries) => _ReportBody(entries: entries),
+          data: (entries) => _ReportBody(
+            entries: entries,
+            generatedComment: generationState.comment,
+          ),
           error: (error, stackTrace) =>
               Center(child: Text('読み込みに失敗しました: $error')),
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -33,18 +38,15 @@ class ReportScreen extends ConsumerWidget {
 }
 
 class _ReportBody extends StatelessWidget {
-  const _ReportBody({required this.entries});
+  const _ReportBody({required this.entries, required this.generatedComment});
 
   final List<WeightEntry> entries;
+  final String? generatedComment;
 
   @override
   Widget build(BuildContext context) {
     final latest = entries.isNotEmpty ? entries.first : null;
-    final previous = entries.length > 1 ? entries[1] : null;
     final latestWeight = latest?.weightKg;
-    final previousDiff = latestWeight == null || previous == null
-        ? null
-        : latestWeight - previous.weightKg;
     final remaining = latestWeight == null
         ? null
         : (latestWeight - targetWeightKg).clamp(0, double.infinity).toDouble();
@@ -86,8 +88,10 @@ class _ReportBody extends StatelessWidget {
                             const SizedBox(height: 20),
                             _LayeredReportBottomSection(
                               remaining: remaining,
-                              latestWeight: latestWeight,
-                              previousDiff: previousDiff,
+                              aiComment:
+                                  latest?.aiComment ??
+                                  generatedComment ??
+                                  aiCommentFailureMessage,
                               scale: scale,
                             ),
                           ],
@@ -546,14 +550,12 @@ class _SummaryCard extends StatelessWidget {
 class _LayeredReportBottomSection extends StatelessWidget {
   const _LayeredReportBottomSection({
     required this.remaining,
-    required this.latestWeight,
-    required this.previousDiff,
+    required this.aiComment,
     required this.scale,
   });
 
   final double? remaining;
-  final double? latestWeight;
-  final double? previousDiff;
+  final String aiComment;
   final double scale;
 
   @override
@@ -585,11 +587,7 @@ class _LayeredReportBottomSection extends StatelessWidget {
                 left: 0,
                 top: 244 * scale,
                 width: messageWidth,
-                child: _ViewerMessagePanel(
-                  latestWeight: latestWeight,
-                  previousDiff: previousDiff,
-                  scale: scale,
-                ),
+                child: _ViewerMessagePanel(aiComment: aiComment, scale: scale),
               ),
             ],
           ),
@@ -640,14 +638,9 @@ class _ReportCharacterArt extends StatelessWidget {
 }
 
 class _ViewerMessagePanel extends StatelessWidget {
-  const _ViewerMessagePanel({
-    required this.latestWeight,
-    required this.previousDiff,
-    required this.scale,
-  });
+  const _ViewerMessagePanel({required this.aiComment, required this.scale});
 
-  final double? latestWeight;
-  final double? previousDiff;
+  final String aiComment;
   final double scale;
 
   @override
@@ -677,78 +670,14 @@ class _ViewerMessagePanel extends StatelessWidget {
             ),
           ),
           SizedBox(height: 14 * scale),
-          _MessageRichLine(
-            label: '本日は ',
-            value: '${_formatNumber(latestWeight)}kg',
-            suffix: ' でしたわー!!',
-            scale: scale,
-          ),
-          _MessageRichLine(
-            label: '前日より ',
-            value: '${_formatSigned(previousDiff).replaceAll('−', '')}kg',
-            suffix: previousDiff == null || previousDiff! >= 0
-                ? ' ですの。'
-                : ' 減って、',
-            scale: scale,
-          ),
           Text(
-            '7日平均もしっかり下がってきてますの〜',
-            style: TextStyle(
-              fontSize: 18 * scale,
-              height: 1.9,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          Divider(
-            color: const Color(0xFFFF8DB8),
-            height: 28 * scale,
-            thickness: 1,
-          ),
-          Text(
-            'この調子で、ゆるやかでも\n確実に減少傾向が続いていますわ！\n\n焦らずコツコツが一番ですのっ♪\n\n一緒に目標の75kgを目指して、\nがんばりましょうねっ。',
+            aiComment,
             style: TextStyle(
               fontSize: 18 * scale,
               height: 1.65,
               fontWeight: FontWeight.w900,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MessageRichLine extends StatelessWidget {
-  const _MessageRichLine({
-    required this.label,
-    required this.value,
-    required this.suffix,
-    required this.scale,
-  });
-
-  final String label;
-  final String value;
-  final String suffix;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return RichText(
-      text: TextSpan(
-        style: TextStyle(
-          color: _ink,
-          fontFamily: 'Noto Sans JP',
-          fontSize: 18 * scale,
-          height: 1.9,
-          fontWeight: FontWeight.w900,
-        ),
-        children: [
-          TextSpan(text: label),
-          TextSpan(
-            text: value,
-            style: const TextStyle(color: _deepPink),
-          ),
-          TextSpan(text: suffix),
         ],
       ),
     );

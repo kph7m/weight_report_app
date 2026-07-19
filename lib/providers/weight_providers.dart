@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/app_settings.dart';
 import '../models/weight_entry.dart';
 import '../services/weight_repository.dart';
 
@@ -14,12 +15,22 @@ final weightEntriesProvider = StreamProvider<List<WeightEntry>>((ref) async* {
   yield* repository.watchEntries();
 });
 
+final appSettingsProvider = StreamProvider<AppSettings?>((ref) async* {
+  final repository = await ref.watch(weightRepositoryProvider.future);
+  yield* repository.watchSettings();
+});
+
 final sevenDayAverageProvider = Provider<double?>((ref) {
-  final entries = ref.watch(weightEntriesProvider).valueOrNull ?? const <WeightEntry>[];
+  final entries =
+      ref.watch(weightEntriesProvider).valueOrNull ?? const <WeightEntry>[];
   if (entries.isEmpty) return null;
 
   final now = DateTime.now();
-  final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+  final start = DateTime(
+    now.year,
+    now.month,
+    now.day,
+  ).subtract(const Duration(days: 6));
   final recent = entries.where((entry) => !entry.date.isBefore(start)).toList();
   if (recent.isEmpty) return null;
 

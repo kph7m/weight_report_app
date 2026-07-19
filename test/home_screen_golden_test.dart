@@ -1,13 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weight_report_app/models/weight_entry.dart';
+import 'package:weight_report_app/models/app_settings.dart';
+import 'package:weight_report_app/models/ai_comment_request.dart';
+import 'package:weight_report_app/providers/ai_comment_providers.dart';
 import 'package:weight_report_app/providers/weight_providers.dart';
 import 'package:weight_report_app/services/weight_repository.dart';
+import 'package:weight_report_app/services/openai_responses_service.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
 import 'package:weight_report_app/screens/report_screen.dart';
+import 'package:weight_report_app/screens/settings_screen.dart';
 
 const _fontFamily = 'Noto Sans JP';
 const _requiredImageAssets = <String>[
@@ -22,6 +29,7 @@ const _requiredImageAssets = <String>[
 Future<void> _pumpHomeScreen(
   WidgetTester tester, {
   WeightRepository? repository,
+  OpenAiResponsesService? aiCommentService,
   List<WeightEntry> entries = const [],
 }) async {
   await tester.pumpWidget(
@@ -30,6 +38,8 @@ Future<void> _pumpHomeScreen(
         weightEntriesProvider.overrideWith((ref) => Stream.value(entries)),
         if (repository != null)
           weightRepositoryProvider.overrideWith((ref) async => repository),
+        if (aiCommentService != null)
+          openAiResponsesServiceProvider.overrideWithValue(aiCommentService),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -60,10 +70,13 @@ String? _assetNameForSemanticLabel(WidgetTester tester, String semanticLabel) {
 }
 
 class _FakeWeightRepository implements WeightRepository {
-  _FakeWeightRepository({this.saveError});
+  _FakeWeightRepository({this.saveError, this.apiKey});
 
   final Object? saveError;
+  final String? apiKey;
   final savedWeights = <double>[];
+  final savedHeights = <double?>[];
+  final savedComments = <String>[];
 
   @override
   Future<void> saveToday(double weightKg) async {
@@ -77,7 +90,36 @@ class _FakeWeightRepository implements WeightRepository {
   Stream<List<WeightEntry>> watchEntries() => Stream.value(const []);
 
   @override
+  Stream<AppSettings?> watchSettings() =>
+      Stream.value(apiKey == null ? null : AppSettings(openAiApiKey: apiKey));
+
+  @override
+  Future<String> previousDayAiComment(DateTime date) async => '';
+
+  @override
+  Future<void> saveAiComment(DateTime date, String comment) async {
+    savedComments.add(comment);
+  }
+
+  @override
+  Future<void> saveHeight(double? heightCm) async {
+    savedHeights.add(heightCm);
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeOpenAiResponsesService extends OpenAiResponsesService {
+  _FakeOpenAiResponsesService(this.result);
+
+  final Future<String> result;
+
+  @override
+  Future<String> generateComment({
+    required String apiKey,
+    required AiCommentRequest request,
+  }) => result;
 }
 
 void main() {
@@ -94,6 +136,7 @@ void main() {
       await Future<void>.delayed(const Duration(seconds: 1));
     });
     await tester.pump();
+    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
     expect(find.byType(Image), findsNWidgets(3));
     final renderImages = tester.renderObjectList<RenderImage>(
       find.byType(RawImage),
@@ -109,15 +152,64 @@ void main() {
     );
   });
 
+  testWidgets('opens settings screen and returns home', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpHomeScreen(tester);
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.text('身長'), findsOneWidget);
+    expect(find.text('目標体重'), findsOneWidget);
+    expect(find.text('OpenAIキー'), findsOneWidget);
+    expect(find.textContaining('182.0'), findsNothing);
+    expect(find.textContaining('75.0'), findsNothing);
+    expect(find.textContaining('sk-'), findsNothing);
+    await expectLater(
+      find.byType(SettingsScreen),
+      matchesGoldenFile('../docs/screenshots/settings-screen.png'),
+    );
+
+    await tester.tap(find.byTooltip('戻る'));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('saves an entered setting through the app repository', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _FakeWeightRepository();
+
+    await _pumpHomeScreen(tester, repository: repository);
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('身長'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), '165.5');
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect(repository.savedHeights, [165.5]);
+  });
+
   testWidgets('shows thinking character after weight input reaches 30.0', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final repository = _FakeWeightRepository();
+    final repository = _FakeWeightRepository(apiKey: 'sk-test');
+    final response = Completer<String>();
 
-    await _pumpHomeScreen(tester, repository: repository);
+    await _pumpHomeScreen(
+      tester,
+      repository: repository,
+      aiCommentService: _FakeOpenAiResponsesService(response.future),
+    );
     expect(
       _assetNameForSemanticLabel(tester, '体重入力キャラクター'),
       'assets/images/character_pointing_input.png',
@@ -155,9 +247,14 @@ void main() {
     );
     expect(characterRenderImages.last.image, isNotNull);
 
-    await tester.pump(const Duration(seconds: 3));
+    expect(
+      tester.widget<TextFormField>(find.byType(TextFormField)).enabled,
+      isFalse,
+    );
+    response.complete('順調に変化していますわ。');
     await tester.pumpAndSettle();
     expect(find.byType(ReportScreen), findsOneWidget);
+    expect(repository.savedComments, ['順調に変化していますわ。']);
   });
 
   testWidgets(
@@ -165,9 +262,14 @@ void main() {
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final repository = _FakeWeightRepository();
+      final repository = _FakeWeightRepository(apiKey: 'sk-test');
+      final response = Completer<String>();
 
-      await _pumpHomeScreen(tester, repository: repository);
+      await _pumpHomeScreen(
+        tester,
+        repository: repository,
+        aiCommentService: _FakeOpenAiResponsesService(response.future),
+      );
       await tester.enterText(find.byType(TextFormField), '77.7');
       tester.binding.focusManager.primaryFocus?.unfocus();
       await tester.pump();
@@ -183,11 +285,40 @@ void main() {
         matchesGoldenFile('../docs/screenshots/home-screen-thinking.png'),
       );
 
-      await tester.pump(const Duration(seconds: 3));
+      response.complete('今日も一歩進みましたわ。');
       await tester.pumpAndSettle();
       expect(find.byType(ReportScreen), findsOneWidget);
     },
   );
+
+  testWidgets('shows error log dialog and fallback comment on API failure', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _FakeWeightRepository();
+
+    await _pumpHomeScreen(tester, repository: repository);
+    await tester.enterText(find.byType(TextFormField), '78.0');
+    tester.binding.focusManager.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+
+    expect(find.text('エラーが発生しました'), findsOneWidget);
+    expect(
+      find.textContaining('OpenAI API key is not configured.'),
+      findsOneWidget,
+    );
+    await expectLater(
+      find.byType(AlertDialog),
+      matchesGoldenFile('../docs/screenshots/ai-comment-error-dialog.png'),
+    );
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ReportScreen), findsOneWidget);
+    expect(find.text(aiCommentFailureMessage), findsOneWidget);
+    expect(repository.savedComments, isEmpty);
+  });
 
   testWidgets('shows report screen when today entry already exists', (
     tester,
@@ -213,7 +344,13 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(922, 1706));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final entries = [
-      WeightEntry(date: DateTime(2026, 6, 30), weightKg: 86.3),
+      WeightEntry(
+        date: DateTime(2026, 6, 30),
+        weightKg: 86.3,
+        aiComment:
+            '前日から0.4kg減っていますわ。'
+            '7日間の変化も意識しながら、焦らず今日の積み重ねを大切にしてまいりましょう。',
+      ),
       WeightEntry(date: DateTime(2026, 6, 29), weightKg: 86.7),
       WeightEntry(date: DateTime(2026, 6, 28), weightKg: 85.8),
       WeightEntry(date: DateTime(2026, 6, 27), weightKg: 87.3),
@@ -255,6 +392,7 @@ void main() {
     expect(find.text('日付'), findsOneWidget);
     expect(find.textContaining('JST'), findsNothing);
     expect(find.text('視聴者さん♪'), findsOneWidget);
+    expect(find.textContaining('前日から0.4kg減っていますわ'), findsOneWidget);
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
     expect(find.textContaining('目標まであと'), findsOneWidget);
     expect(find.textContaining('※7日平均は'), findsNothing);
