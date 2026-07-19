@@ -1,11 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_settings.dart';
+import '../models/ai_model.dart';
 import '../models/open_ai_exchange.dart';
 import '../models/weight_entry.dart';
 import '../services/weight_repository.dart';
+import '../services/ai_model_preferences.dart';
 
 const targetWeightKg = 75.0;
+
+final aiModelPreferencesProvider = Provider<AiModelPreferences>((ref) {
+  return AiModelPreferences();
+});
+
+final selectedAiModelProvider = FutureProvider<AiModel>((ref) {
+  return ref.watch(aiModelPreferencesProvider).load();
+});
 
 final weightRepositoryProvider = FutureProvider<WeightRepository>((ref) {
   return WeightRepository.open();

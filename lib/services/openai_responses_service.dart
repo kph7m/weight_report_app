@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 
 import '../models/ai_comment_request.dart';
 
-const openAiResponsesModel = 'gpt-4.1-mini';
 const _systemPromptAsset = 'assets/prompts/ai_comment.txt';
 const _failureMessage = '今日はコメントを生成できませんでした。';
 
@@ -48,6 +47,7 @@ class OpenAiResponsesService {
 
   Future<String> generateComment({
     required String apiKey,
+    required String model,
     required AiCommentRequest request,
     Future<void> Function(OpenAiExchangeData exchange)? onExchange,
   }) async {
@@ -65,7 +65,7 @@ class OpenAiResponsesService {
     try {
       final systemPrompt = await rootBundle.loadString(_systemPromptAsset);
       final requestBody = {
-        'model': openAiResponsesModel,
+        'model': model,
         'instructions': systemPrompt,
         'input': request.toPromptInput(),
       };

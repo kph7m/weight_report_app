@@ -5,13 +5,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weight_report_app/models/weight_entry.dart';
 import 'package:weight_report_app/models/app_settings.dart';
 import 'package:weight_report_app/models/ai_comment_request.dart';
+import 'package:weight_report_app/models/ai_model.dart';
 import 'package:weight_report_app/providers/ai_comment_providers.dart';
 import 'package:weight_report_app/providers/weight_providers.dart';
 import 'package:weight_report_app/services/weight_repository.dart';
 import 'package:weight_report_app/services/openai_responses_service.dart';
+import 'package:weight_report_app/services/ai_model_preferences.dart';
 import 'package:weight_report_app/screens/home_screen.dart';
 import 'package:weight_report_app/screens/report_screen.dart';
 import 'package:weight_report_app/screens/settings_screen.dart';
@@ -118,12 +121,17 @@ class _FakeOpenAiResponsesService extends OpenAiResponsesService {
   @override
   Future<String> generateComment({
     required String apiKey,
+    required String model,
     required AiCommentRequest request,
     Future<void> Function(OpenAiExchangeData exchange)? onExchange,
   }) => result;
 }
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   setUpAll(() async {
     await _verifyRequiredImageAssets();
   });
@@ -164,6 +172,8 @@ void main() {
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(find.text('身長'), findsOneWidget);
     expect(find.text('目標体重'), findsOneWidget);
+    expect(find.text('AIモデル'), findsOneWidget);
+    expect(find.text('GPT-5.5 Instant'), findsOneWidget);
     expect(find.text('OpenAIキー'), findsOneWidget);
     expect(find.textContaining('182.0'), findsNothing);
     expect(find.textContaining('75.0'), findsNothing);
@@ -176,6 +186,25 @@ void main() {
     await tester.tap(find.byTooltip('戻る'));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('selects an AI model from settings', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpHomeScreen(tester);
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('AIモデル'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('AIモデルを選択'), findsOneWidget);
+    expect(find.text('GPT-5.6 Terra'), findsOneWidget);
+    await tester.tap(find.text('GPT-5.6 Terra'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('GPT-5.6 Terra'), findsOneWidget);
+    expect(await AiModelPreferences().load(), AiModel.gpt56Terra);
   });
 
   testWidgets('saves an entered setting through the app repository', (

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/ai_model.dart';
 import '../models/open_ai_exchange.dart';
 import '../providers/weight_providers.dart';
 
@@ -18,6 +19,8 @@ class SettingsScreen extends ConsumerWidget {
     final mediaQuery = MediaQuery.of(context);
     final settings = ref.watch(appSettingsProvider).valueOrNull;
     final exchange = ref.watch(latestOpenAiExchangeProvider).valueOrNull;
+    final selectedModel =
+        ref.watch(selectedAiModelProvider).valueOrNull ?? AiModel.defaultModel;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFD),
@@ -75,6 +78,17 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   _SettingsTile(
+                    icon: Icons.smart_toy_rounded,
+                    label: 'AIモデル',
+                    value: selectedModel.displayName,
+                    onTap: () => _selectAiModel(
+                      context,
+                      ref,
+                      selectedModel: selectedModel,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _SettingsTile(
                     icon: Icons.http_rounded,
                     label: '直近のOpenAI通信',
                     value: exchange == null
@@ -117,6 +131,37 @@ class SettingsScreen extends ConsumerWidget {
     if (value == null || value.isEmpty) return '';
     final prefix = value.length >= 3 ? value.substring(0, 3) : '';
     return '$prefix••••••••••';
+  }
+
+  Future<void> _selectAiModel(
+    BuildContext context,
+    WidgetRef ref, {
+    required AiModel selectedModel,
+  }) async {
+    final model = await showDialog<AiModel>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('AIモデルを選択'),
+        children: AiModel.values
+            .map(
+              (model) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(dialogContext, model),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(model.displayName),
+                  subtitle: Text(model.apiName),
+                  trailing: model == selectedModel
+                      ? const Icon(Icons.check_rounded, color: _pink)
+                      : null,
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (model == null) return;
+    await ref.read(aiModelPreferencesProvider).save(model);
+    ref.invalidate(selectedAiModelProvider);
   }
 
   Future<void> _editNumber(

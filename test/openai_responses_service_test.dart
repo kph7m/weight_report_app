@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:weight_report_app/models/ai_model.dart';
 import 'package:weight_report_app/services/openai_responses_service.dart';
 
 void main() {
@@ -25,8 +26,9 @@ void main() {
     });
   });
 
-  test('API configuration is centrally defined', () {
-    expect(openAiResponsesModel, isNotEmpty);
+  test('AI model configuration is centrally defined', () {
+    expect(AiModel.defaultModel.apiName, 'gpt-5.5-instant');
+    expect(AiModel.values.map((model) => model.apiName).toSet().length, 5);
     expect(OpenAiResponsesService.timeout, const Duration(seconds: 30));
   });
 }
