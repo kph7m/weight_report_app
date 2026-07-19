@@ -14,6 +14,8 @@
 
 Responses API
 
+AndroidアプリはResponses APIへ接続できるよう、`AndroidManifest.xml`に`android.permission.INTERNET`を宣言する。
+
 `previous_response_id`は使用しない。
 
 毎回独立したリクエストとして実行する。
