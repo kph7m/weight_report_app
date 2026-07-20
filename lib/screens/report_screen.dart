@@ -219,12 +219,12 @@ class _ReportBody extends StatelessWidget {
                       Positioned(
                         left: 28,
                         right: 28,
-                        top: 337,
+                        top: 286,
                         child: _HistoryCard(rows: rows),
                       ),
                       Positioned(
                         left: 28,
-                        top: 865,
+                        top: 814,
                         width: 450,
                         height: 565,
                         child: _MetanCommentPanel(comment: comment),
@@ -313,8 +313,8 @@ class _TodayWeightCard extends StatelessWidget {
         : (weight - targetWeightKg).clamp(0, double.infinity).toDouble();
 
     return Container(
-      height: 312,
-      padding: const EdgeInsets.fromLTRB(25, 16, 25, 20),
+      height: 248,
+      padding: const EdgeInsets.fromLTRB(25, 17, 25, 20),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(40),
@@ -330,7 +330,6 @@ class _TodayWeightCard extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _ThreeSliceLabel(
                 family: 'report_today_title',
@@ -346,90 +345,138 @@ class _TodayWeightCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 30),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        weight == null ? '--.-' : weight.toStringAsFixed(1),
+                        style: const TextStyle(
+                          color: _deepPink,
+                          fontFamily: reportAccentFontFamily,
+                          fontSize: 84,
+                          height: 1,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 8, left: 8),
+                        child: Text(
+                          'kg でしたわー！',
+                          style: TextStyle(
+                            color: _ink,
+                            fontFamily: reportAccentFontFamily,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               Image.asset(
-                'assets/images/report/report_sparkle_gold.png',
-                width: 62,
-                height: 62,
+                'assets/images/report/report_sparkle_pink.png',
+                width: 48,
+                height: 48,
                 excludeFromSemantics: true,
               ),
             ],
           ),
-          Transform.translate(
-            offset: const Offset(0, -35),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  weight == null ? '--.-' : weight.toStringAsFixed(1),
-                  style: const TextStyle(
-                    color: _deepPink,
-                    fontFamily: reportAccentFontFamily,
-                    fontSize: 95,
-                    height: 1,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 9, left: 9),
-                  child: Text(
-                    'kg でしたわー！',
-                    style: TextStyle(
-                      color: _ink,
-                      fontFamily: reportAccentFontFamily,
-                      fontSize: 31,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
           const Spacer(),
-          Container(
-            height: 62,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFFBFC),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFFFFCADC)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '目標体重　${targetWeightKg.toStringAsFixed(1)} kg',
-                  style: const TextStyle(
-                    fontFamily: reportAccentFontFamily,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                  ),
+          Row(
+            children: [
+              Expanded(
+                child: _GoalPill(
+                  icon: Icons.emoji_events_rounded,
+                  iconColor: Color(0xFFFFC329),
+                  label: '目標体重',
+                  value: '${targetWeightKg.toStringAsFixed(1)} kg',
                 ),
-                const SizedBox(width: 34),
-                Container(width: 2, height: 31, color: const Color(0xFFFFD3E1)),
-                const SizedBox(width: 34),
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      const TextSpan(text: '目標まであと　'),
-                      TextSpan(
-                        text: '${remaining?.toStringAsFixed(1) ?? '--.-'} kg',
-                        style: const TextStyle(color: _deepPink),
-                      ),
-                      const TextSpan(text: '　ですわ！'),
-                    ],
-                  ),
-                  style: const TextStyle(
-                    fontFamily: reportAccentFontFamily,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                  ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _GoalPill(
+                  icon: Icons.favorite_rounded,
+                  iconColor: Color(0xFFFF8DB8),
+                  label: '目標まであと',
+                  value: '${remaining?.toStringAsFixed(1) ?? '--.-'} kg',
+                  suffix: 'ですわ！',
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _GoalPill extends StatelessWidget {
+  const _GoalPill({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+    this.suffix,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String value;
+  final String? suffix;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAFC),
+        borderRadius: BorderRadius.circular(36),
+        border: Border.all(color: const Color(0xFFFFD9E5), width: 2),
+        boxShadow: const [BoxShadow(color: Color(0x12D94A80), blurRadius: 8)],
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: iconColor, size: 32),
+            const SizedBox(width: 12),
+            Text(
+              '$label　',
+              style: const TextStyle(
+                fontFamily: reportAccentFontFamily,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                color: _deepPink,
+                fontFamily: reportAccentFontFamily,
+                fontSize: 31,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            if (suffix != null)
+              Text(
+                '　$suffix',
+                style: const TextStyle(
+                  fontFamily: reportAccentFontFamily,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

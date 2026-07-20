@@ -451,8 +451,11 @@ void main() {
       'assets/images/character_report.png',
     );
     expect(find.text('本日の体重'), findsOneWidget);
-    expect(find.text('目標体重　75.0 kg'), findsOneWidget);
-    expect(find.text('目標まであと　11.3 kg　ですわ！'), findsOneWidget);
+    expect(find.text('目標体重　'), findsOneWidget);
+    expect(find.text('75.0 kg'), findsOneWidget);
+    expect(find.text('目標まであと　'), findsOneWidget);
+    expect(find.text('11.3 kg'), findsOneWidget);
+    expect(find.text('　ですわ！'), findsOneWidget);
     expect(find.textContaining('今日も記録えらいですわっ'), findsNothing);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.bySemanticsLabel('体重入力画面を開く'), findsNothing);
