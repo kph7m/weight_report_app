@@ -13,7 +13,6 @@ Compose each family as a horizontal `Row`: fixed-width `left`, `Expanded` center
 ## Tiled assets
 
 - `report_background_tile.png`: repeat or cover behind the report.
-- `report_bottom_lace_tile.png`: repeat horizontally along the bottom, preserving aspect ratio.
 
 ## Free-position decorations
 

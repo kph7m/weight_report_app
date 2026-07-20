@@ -268,34 +268,15 @@ class _ReportBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        const Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Color(0xFFFFF8FB),
-              image: DecorationImage(
-                image: AssetImage(
-                  'assets/images/report/report_background_tile.png',
-                ),
-                repeat: ImageRepeat.repeat,
-                opacity: 0.62,
-              ),
-            ),
-          ),
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        color: Color(0xFFFFF8FB),
+        image: DecorationImage(
+          image: AssetImage('assets/images/report/report_background_tile.png'),
+          repeat: ImageRepeat.repeat,
+          opacity: 0.62,
         ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 190,
-          child: Image.asset(
-            'assets/images/report/report_bottom_lace_tile.png',
-            fit: BoxFit.fill,
-            excludeFromSemantics: true,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
