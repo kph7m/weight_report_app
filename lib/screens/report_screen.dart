@@ -12,7 +12,6 @@ const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
 const _ink = Color(0xFF171717);
-const _reportCharacterScale = 1.7;
 const _weightInputIconAsset = 'assets/images/weight_input_icon.png';
 
 class ReportScreen extends ConsumerWidget {
@@ -187,49 +186,56 @@ class _ReportBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final latest = entries.isNotEmpty ? entries.first : null;
     final rows = _recentRows(entries);
+    final comment =
+        latest?.aiComment ?? generatedComment ?? aiCommentFailureMessage;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        const designSize = Size(922, 1706);
-        const scale = 1.0;
-        return Center(
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: SizedBox(
-              width: designSize.width,
-              height: designSize.height,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+        const designSize = Size(922, 1570);
+        return ColoredBox(
+          color: const Color(0xFFFFF8FB),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                width: designSize.width,
+                height: designSize.height,
                 child: DefaultTextStyle.merge(
                   style: const TextStyle(
                     color: _ink,
+                    fontFamily: appFontFamily,
                     fontWeight: FontWeight.w700,
                   ),
                   child: Stack(
-                    clipBehavior: Clip.none,
                     children: [
-                      Positioned.fill(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _ReportHeroHeader(latest: latest, scale: scale),
-                            const SizedBox(height: 8),
-                            _ReportTitleArea(
-                              date: latest?.date ?? DateTime.now(),
-                              scale: scale,
-                            ),
-                            const SizedBox(height: 8),
-                            _SevenDayTable(rows: rows, scale: scale),
-                            const SizedBox(height: 20),
-                            _LayeredReportBottomSection(
-                              aiComment:
-                                  latest?.aiComment ??
-                                  generatedComment ??
-                                  aiCommentFailureMessage,
-                              scale: scale,
-                            ),
-                          ],
-                        ),
+                      const Positioned.fill(child: _ReportBackdrop()),
+                      Positioned(
+                        left: 28,
+                        right: 28,
+                        top: 18,
+                        child: _TodayWeightCard(latest: latest),
+                      ),
+                      Positioned(
+                        left: 28,
+                        right: 28,
+                        top: 337,
+                        child: _HistoryCard(rows: rows),
+                      ),
+                      Positioned(
+                        left: 28,
+                        top: 865,
+                        width: 450,
+                        height: 565,
+                        child: _MetanCommentPanel(comment: comment),
+                      ),
+                      const Positioned(
+                        right: 5,
+                        bottom: 40,
+                        width: 500,
+                        height: 680,
+                        child: _ReportCharacter(),
                       ),
                     ],
                   ),
@@ -258,32 +264,47 @@ class _ReportBody extends StatelessWidget {
   }
 }
 
-double? rollingSevenDayAverage(List<WeightEntry> sortedEntries, int index) {
-  if (index < 0 || index >= sortedEntries.length) return null;
+class _ReportBackdrop extends StatelessWidget {
+  const _ReportBackdrop();
 
-  final entryDate = _dateOnly(sortedEntries[index].date);
-  final windowStart = entryDate.subtract(const Duration(days: 6));
-  final windowEntries = sortedEntries.where((entry) {
-    final date = _dateOnly(entry.date);
-    return !date.isBefore(windowStart) && !date.isAfter(entryDate);
-  }).toList();
-
-  if (windowEntries.isEmpty) return null;
-
-  final total = windowEntries.fold<double>(
-    0,
-    (sum, entry) => sum + entry.weightKg,
-  );
-  return total / windowEntries.length;
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0xFFFFF8FB),
+              image: DecorationImage(
+                image: AssetImage(
+                  'assets/images/report/report_background_tile.png',
+                ),
+                repeat: ImageRepeat.repeat,
+                opacity: 0.62,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 190,
+          child: Image.asset(
+            'assets/images/report/report_bottom_lace_tile.png',
+            fit: BoxFit.fill,
+            excludeFromSemantics: true,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
-
-class _ReportHeroHeader extends StatelessWidget {
-  const _ReportHeroHeader({required this.latest, required this.scale});
+class _TodayWeightCard extends StatelessWidget {
+  const _TodayWeightCard({required this.latest});
 
   final WeightEntry? latest;
-  final double scale;
 
   @override
   Widget build(BuildContext context) {
@@ -291,179 +312,124 @@ class _ReportHeroHeader extends StatelessWidget {
     final remaining = weight == null
         ? null
         : (weight - targetWeightKg).clamp(0, double.infinity).toDouble();
+
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 18 * scale,
-        vertical: 14 * scale,
-      ),
+      height: 312,
+      padding: const EdgeInsets.fromLTRB(25, 16, 25, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16 * scale),
-        border: Border.all(color: const Color(0xFFFF7BAC), width: 2),
+        color: Colors.white.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: const Color(0xFFFFBDD2), width: 3),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x30D94A80),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                '本日の\n体重',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: reportAccentFontFamily,
-                  color: _reportPink,
-                  fontSize: 30 * scale,
-                  fontWeight: FontWeight.w900,
-                  height: 1.14,
-                ),
-              ),
-              SizedBox(width: 28 * scale),
-              Icon(
-                Icons.monitor_weight_outlined,
-                color: _blue,
-                size: 58 * scale,
-              ),
-              SizedBox(width: 22 * scale),
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontFamily: reportAccentFontFamily,
-                        color: _ink,
-                        fontWeight: FontWeight.w900,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: weight == null
-                              ? '--.-kg'
-                              : '${weight.toStringAsFixed(1)}kg',
-                          style: TextStyle(
-                            color: _deepPink,
-                            fontSize: 76 * scale,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' でしたわー!!',
-                          style: TextStyle(fontSize: 37 * scale),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Icon(Icons.auto_awesome, color: Colors.amber, size: 36 * scale),
-            ],
-          ),
-          SizedBox(height: 6 * scale),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(Icons.local_florist, color: _reportPink, size: 34 * scale),
-              Expanded(
-                child: Text(
-                  '目標体重　${targetWeightKg.toStringAsFixed(1)}kg　'
-                  '目標まであと　${remaining?.toStringAsFixed(1) ?? '--.-'}kg　ですわ！',
-                  textAlign: TextAlign.center,
+              _ThreeSliceLabel(
+                family: 'report_today_title',
+                width: 250,
+                height: 72,
+                child: const Text(
+                  '本日の体重',
                   style: TextStyle(
+                    color: Colors.white,
                     fontFamily: reportAccentFontFamily,
-                    fontSize: 23 * scale,
+                    fontSize: 27,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
-              Icon(Icons.local_florist, color: _reportPink, size: 34 * scale),
+              const Spacer(),
+              Image.asset(
+                'assets/images/report/report_sparkle_gold.png',
+                width: 62,
+                height: 62,
+                excludeFromSemantics: true,
+              ),
+              const SizedBox(width: 16),
+              const _WeightInputShortcut(),
             ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MeasuredDateBadge extends StatelessWidget {
-  const _MeasuredDateBadge({required this.date, required this.scale});
-
-  final DateTime date;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 28 * scale,
-        vertical: 7 * scale,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFE4EF),
-        borderRadius: BorderRadius.circular(8 * scale),
-        border: Border.all(color: const Color(0xFFFF9BC2)),
-      ),
-      child: Text(
-        '測定日：${_formatJstDate(date)}',
-        style: TextStyle(fontSize: 24 * scale, fontWeight: FontWeight.w900),
-      ),
-    );
-  }
-}
-
-class _ReportTitleArea extends StatelessWidget {
-  const _ReportTitleArea({required this.date, required this.scale});
-
-  final DateTime date;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.center,
-      children: [
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _MeasuredDateBadge(date: date, scale: scale),
-            SizedBox(height: 12 * scale),
-            _RibbonTitle(scale: scale),
-          ],
-        ),
-        Positioned(
-          right: 14 * scale,
-          child: _WeightInputShortcutButton(scale: scale),
-        ),
-      ],
-    );
-  }
-}
-
-class _RibbonTitle extends StatelessWidget {
-  const _RibbonTitle({required this.scale});
-
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 52 * scale,
-        vertical: 9 * scale,
-      ),
-      decoration: BoxDecoration(
-        color: _reportPink,
-        borderRadius: BorderRadius.circular(3 * scale),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.assignment, color: Colors.white, size: 32 * scale),
-          SizedBox(width: 10 * scale),
-          Text(
-            '直近７日間の体重記録',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 31 * scale,
-              fontWeight: FontWeight.w900,
+          Transform.translate(
+            offset: const Offset(0, -35),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  weight == null ? '--.-' : weight.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: _deepPink,
+                    fontFamily: reportAccentFontFamily,
+                    fontSize: 95,
+                    height: 1,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 9, left: 9),
+                  child: Text(
+                    'kg でしたわー！',
+                    style: TextStyle(
+                      color: _ink,
+                      fontFamily: reportAccentFontFamily,
+                      fontSize: 31,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Container(
+            height: 62,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBFC),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFFFFCADC)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '目標体重　${targetWeightKg.toStringAsFixed(1)} kg',
+                  style: const TextStyle(
+                    fontFamily: reportAccentFontFamily,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(width: 34),
+                Container(width: 2, height: 31, color: const Color(0xFFFFD3E1)),
+                const SizedBox(width: 34),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(text: '目標まであと　'),
+                      TextSpan(
+                        text: '${remaining?.toStringAsFixed(1) ?? '--.-'} kg',
+                        style: const TextStyle(color: _deepPink),
+                      ),
+                      const TextSpan(text: '　ですわ！'),
+                    ],
+                  ),
+                  style: const TextStyle(
+                    fontFamily: reportAccentFontFamily,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -472,68 +438,8 @@ class _RibbonTitle extends StatelessWidget {
   }
 }
 
-class _SevenDayTable extends StatelessWidget {
-  const _SevenDayTable({required this.rows, required this.scale});
-
-  final List<_ReportRowData> rows;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10 * scale),
-      child: Table(
-        border: TableBorder.all(color: const Color(0xFFFFD5E4)),
-        columnWidths: const {
-          0: FlexColumnWidth(1.55),
-          1: FlexColumnWidth(1.15),
-          2: FlexColumnWidth(1.05),
-          3: FlexColumnWidth(1.75),
-        },
-        children: [
-          _tableRow([
-            Text('日付'),
-            Text('体重'),
-            Text('前日比'),
-            Text('7日平均'),
-          ], isHeader: true),
-          ...rows.map((row) => _tableRow(row.cells)),
-        ],
-      ),
-    );
-  }
-
-  TableRow _tableRow(List<Widget> cells, {bool isHeader = false}) {
-    return TableRow(
-      decoration: BoxDecoration(color: isHeader ? _reportPink : Colors.white),
-      children: cells
-          .map(
-            (cell) => Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 5 * scale,
-                vertical: isHeader ? 9 * scale : 12 * scale,
-              ),
-              child: DefaultTextStyle.merge(
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isHeader ? Colors.white : _ink,
-                  fontSize: isHeader ? 20 * scale : 25 * scale,
-                  height: 1.18,
-                  fontWeight: isHeader ? FontWeight.w900 : FontWeight.w700,
-                ),
-                child: cell,
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _WeightInputShortcutButton extends StatelessWidget {
-  const _WeightInputShortcutButton({required this.scale});
-
-  final double scale;
+class _WeightInputShortcut extends StatelessWidget {
+  const _WeightInputShortcut();
 
   @override
   Widget build(BuildContext context) {
@@ -551,8 +457,8 @@ class _WeightInputShortcutButton extends StatelessWidget {
         },
         child: Image.asset(
           _weightInputIconAsset,
-          width: 116 * scale,
-          height: 116 * scale,
+          width: 112,
+          height: 112,
           semanticLabel: '体重入力アイコン',
         ),
       ),
@@ -560,79 +466,232 @@ class _WeightInputShortcutButton extends StatelessWidget {
   }
 }
 
-class _LayeredReportBottomSection extends StatelessWidget {
-  const _LayeredReportBottomSection({
-    required this.aiComment,
-    required this.scale,
-  });
-
-  final String aiComment;
-  final double scale;
+class _HistoryCard extends StatelessWidget {
+  const _HistoryCard({required this.rows});
+  final List<_ReportRowData> rows;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final messageWidth = constraints.maxWidth * 0.52;
-        return SizedBox(
-          height: 760 * scale,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                right: 0,
-                bottom: 0,
-                width: 420 * scale,
-                height: 500 * scale,
-                child: _ReportCharacterArt(scale: scale),
+    return SizedBox(
+      height: 510,
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 44,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(18, 44, 18, 18),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.96),
+                borderRadius: BorderRadius.circular(34),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x2BD94A80),
+                    blurRadius: 16,
+                    offset: Offset(0, 8),
+                  ),
+                ],
               ),
-              Positioned(
-                left: 0,
-                top: 0,
-                width: messageWidth,
-                child: _ViewerMessagePanel(aiComment: aiComment, scale: scale),
-              ),
-            ],
+              child: _SevenDayTable(rows: rows),
+            ),
           ),
-        );
-      },
+          _ThreeSliceLabel(
+            family: 'report_history_ribbon',
+            width: 540,
+            height: 92,
+            child: const Text(
+              '直近７日間の体重記録',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: reportAccentFontFamily,
+                fontSize: 31,
+                fontWeight: FontWeight.w900,
+                shadows: [Shadow(color: Color(0x559A174D), blurRadius: 3)],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _ReportCharacterArt extends StatelessWidget {
-  const _ReportCharacterArt({required this.scale});
+class _ThreeSliceLabel extends StatelessWidget {
+  const _ThreeSliceLabel({
+    required this.family,
+    required this.width,
+    required this.height,
+    required this.child,
+  });
 
-  final double scale;
+  final String family;
+  final double width;
+  final double height;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final capWidth = height * 1.18;
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Row(
+            children: [
+              Image.asset(
+                'assets/images/report/${family}_left.png',
+                width: capWidth,
+                height: height,
+                fit: BoxFit.fill,
+                excludeFromSemantics: true,
+              ),
+              Expanded(
+                child: Image.asset(
+                  'assets/images/report/${family}_center.png',
+                  height: height,
+                  fit: BoxFit.fill,
+                  excludeFromSemantics: true,
+                ),
+              ),
+              Image.asset(
+                'assets/images/report/${family}_right.png',
+                width: capWidth,
+                height: height,
+                fit: BoxFit.fill,
+                excludeFromSemantics: true,
+              ),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: height * 0.72),
+            child: FittedBox(fit: BoxFit.scaleDown, child: child),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SevenDayTable extends StatelessWidget {
+  const _SevenDayTable({required this.rows});
+  final List<_ReportRowData> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Table(
+        border: TableBorder.all(color: const Color(0xFFFFDDE8), width: 1),
+        columnWidths: const {
+          0: FlexColumnWidth(1.35),
+          1: FlexColumnWidth(1.08),
+          2: FlexColumnWidth(1.06),
+          3: FlexColumnWidth(1.25),
+        },
+        children: [
+          _row(const [
+            Text('日付'),
+            Text('体重'),
+            Text('前日比'),
+            Text('7日平均'),
+          ], header: true),
+          ...rows.map((row) => _row(row.cells)),
+        ],
+      ),
+    );
+  }
+
+  TableRow _row(List<Widget> cells, {bool header = false}) {
+    return TableRow(
+      decoration: BoxDecoration(
+        color: header ? const Color(0xFFF75A99) : Colors.white,
+      ),
+      children: cells
+          .map(
+            (cell) => SizedBox(
+              height: header ? 49 : 50,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: DefaultTextStyle.merge(
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: header ? Colors.white : _ink,
+                      fontSize: header ? 22 : 21,
+                      fontWeight: header ? FontWeight.w900 : FontWeight.w700,
+                    ),
+                    child: cell,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _MetanCommentPanel extends StatelessWidget {
+  const _MetanCommentPanel({required this.comment});
+  final String comment;
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       clipBehavior: Clip.none,
-      alignment: Alignment.bottomRight,
       children: [
-        Positioned(
-          left: 2 * scale,
-          top: 50 * scale,
-          child: _Sparkle(scale: scale),
+        Positioned.fill(
+          child: Image.asset(
+            'assets/images/report/report_comment_panel_frame.png',
+            fit: BoxFit.fill,
+            excludeFromSemantics: true,
+          ),
         ),
+        Positioned(left: 32, right: 32, top: 13, child: _CommentHeading()),
         Positioned(
-          right: 8 * scale,
-          top: 28 * scale,
-          child: _Sparkle(scale: scale),
-        ),
-        Positioned(
-          right: -50 * scale,
-          bottom: 0,
-          child: Transform.scale(
-            scale: _reportCharacterScale,
-            alignment: Alignment.bottomRight,
-            child: Image.asset(
-              'assets/images/character_report.png',
-              semanticLabel: 'レポート応援キャラクター',
-              fit: BoxFit.contain,
-              height: 500 * scale,
-            ),
+          left: 43,
+          right: 43,
+          top: 100,
+          bottom: 72,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  comment,
+                  overflow: TextOverflow.fade,
+                  style: const TextStyle(
+                    color: Color(0xFF3F2C31),
+                    fontFamily: appFontFamily,
+                    fontSize: 19,
+                    height: 1.75,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Image.asset(
+                'assets/images/report/report_comment_divider.png',
+                width: double.infinity,
+                height: 18,
+                fit: BoxFit.fill,
+                excludeFromSemantics: true,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Image.asset(
+                  'assets/images/report/report_comment_ornament.png',
+                  width: 78,
+                  height: 52,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -640,54 +699,130 @@ class _ReportCharacterArt extends StatelessWidget {
   }
 }
 
-class _ViewerMessagePanel extends StatelessWidget {
-  const _ViewerMessagePanel({required this.aiComment, required this.scale});
+class _CommentHeading extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 76,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Row(
+            children: [
+              Image.asset(
+                'assets/images/report/report_comment_heading_left.png',
+                width: 118,
+                height: 76,
+                fit: BoxFit.fill,
+                excludeFromSemantics: true,
+              ),
+              Expanded(
+                child: Image.asset(
+                  'assets/images/report/report_comment_heading_center.png',
+                  height: 76,
+                  fit: BoxFit.fill,
+                  excludeFromSemantics: true,
+                ),
+              ),
+              Image.asset(
+                'assets/images/report/report_comment_heading_right.png',
+                width: 118,
+                height: 76,
+                fit: BoxFit.fill,
+                excludeFromSemantics: true,
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 70),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'めたんからのひとこと',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: reportAccentFontFamily,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-  final String aiComment;
-  final double scale;
+class _ReportCharacter extends StatelessWidget {
+  const _ReportCharacter();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        30 * scale,
-        22 * scale,
-        24 * scale,
-        72 * scale,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20 * scale),
-        border: Border.all(color: const Color(0xFFFF8DB8), width: 2),
-      ),
-      child: Text(
-        aiComment,
-        style: TextStyle(
-          fontFamily: appFontFamily,
-          fontSize: 18 * scale,
-          height: 1.65,
-          fontWeight: FontWeight.w600,
+    return Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        Positioned(
+          bottom: 2,
+          child: Container(
+            width: 310,
+            height: 62,
+            decoration: const BoxDecoration(
+              color: Color(0x55F76B9F),
+              borderRadius: BorderRadius.all(Radius.elliptical(999, 180)),
+            ),
+          ),
         ),
-      ),
+        Positioned(
+          left: 0,
+          top: 55,
+          child: Image.asset(
+            'assets/images/report/report_sparkle_gold.png',
+            width: 65,
+            height: 65,
+            excludeFromSemantics: true,
+          ),
+        ),
+        Positioned(
+          right: 2,
+          top: 35,
+          child: Image.asset(
+            'assets/images/report/report_sparkle_pink.png',
+            width: 64,
+            height: 64,
+            excludeFromSemantics: true,
+          ),
+        ),
+        Image.asset(
+          'assets/images/character_report.png',
+          height: 665,
+          fit: BoxFit.contain,
+          semanticLabel: 'レポート応援キャラクター',
+        ),
+      ],
     );
   }
 }
 
-class _Sparkle extends StatelessWidget {
-  const _Sparkle({required this.scale});
+double? rollingSevenDayAverage(List<WeightEntry> sortedEntries, int index) {
+  if (index < 0 || index >= sortedEntries.length) return null;
 
-  final double scale;
+  final entryDate = _dateOnly(sortedEntries[index].date);
+  final windowStart = entryDate.subtract(const Duration(days: 6));
+  final windowEntries = sortedEntries.where((entry) {
+    final date = _dateOnly(entry.date);
+    return !date.isBefore(windowStart) && !date.isAfter(entryDate);
+  }).toList();
 
-  @override
-  Widget build(BuildContext context) {
-    return Icon(
-      Icons.auto_awesome,
-      color: const Color(0xFFFF8DB8),
-      size: 26 * scale,
-    );
-  }
+  if (windowEntries.isEmpty) return null;
+  final total = windowEntries.fold<double>(
+    0,
+    (sum, entry) => sum + entry.weightKg,
+  );
+  return total / windowEntries.length;
 }
+
+DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
 class _ReportRowData {
   const _ReportRowData({this.date, this.weight, this.diff, this.average});
