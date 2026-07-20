@@ -468,7 +468,7 @@ void main() {
     expect(find.text('日付'), findsOneWidget);
     expect(find.textContaining('JST'), findsNothing);
     expect(find.text('🌸 今日のひとこと♪'), findsNothing);
-    expect(find.text('めたんからのひとこと'), findsOneWidget);
+    expect(find.text('めたんのひとこと'), findsOneWidget);
     expect(find.textContaining('前日から0.4kg減っていますわ'), findsOneWidget);
     expect(
       tester

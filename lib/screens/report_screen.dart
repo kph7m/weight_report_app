@@ -658,61 +658,119 @@ class _MetanCommentPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final paragraphs = _commentParagraphs(comment);
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.97),
+              borderRadius: BorderRadius.circular(42),
+              border: Border.all(color: const Color(0xFFFFD5E3), width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x24D94A80),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(left: 52, right: 52, top: 16, child: _CommentHeading()),
+        Positioned(
+          left: 18,
+          top: 24,
           child: Image.asset(
-            'assets/images/report/report_comment_panel_frame.png',
-            fit: BoxFit.fill,
+            'assets/images/report/report_flower.png',
+            width: 34,
+            height: 34,
             excludeFromSemantics: true,
           ),
         ),
-        Positioned(left: 32, right: 32, top: 13, child: _CommentHeading()),
         Positioned(
-          left: 43,
-          right: 43,
-          top: 100,
-          bottom: 72,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  comment,
-                  overflow: TextOverflow.fade,
-                  style: const TextStyle(
-                    color: Color(0xFF3F2C31),
-                    fontFamily: appFontFamily,
-                    fontSize: 19,
-                    height: 1.75,
-                    fontWeight: FontWeight.w600,
+          right: 18,
+          top: 24,
+          child: Image.asset(
+            'assets/images/report/report_flower.png',
+            width: 34,
+            height: 34,
+            excludeFromSemantics: true,
+          ),
+        ),
+        Positioned(
+          left: 34,
+          right: 34,
+          top: 105,
+          bottom: 30,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.topLeft,
+                  child: SizedBox(
+                    width: constraints.maxWidth,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (
+                          var index = 0;
+                          index < paragraphs.length;
+                          index++
+                        ) ...[
+                          Text(
+                            paragraphs[index],
+                            style: const TextStyle(
+                              color: Color(0xFF3F2C31),
+                              fontFamily: appFontFamily,
+                              fontSize: 19,
+                              height: 1.7,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (index != paragraphs.length - 1) ...[
+                            const SizedBox(height: 9),
+                            Image.asset(
+                              'assets/images/report/report_comment_divider.png',
+                              width: constraints.maxWidth,
+                              height: 12,
+                              fit: BoxFit.fill,
+                              excludeFromSemantics: true,
+                            ),
+                            const SizedBox(height: 9),
+                          ],
+                        ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Image.asset(
-                'assets/images/report/report_comment_divider.png',
-                width: double.infinity,
-                height: 18,
-                fit: BoxFit.fill,
-                excludeFromSemantics: true,
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Image.asset(
-                  'assets/images/report/report_comment_ornament.png',
-                  width: 78,
-                  height: 52,
-                  fit: BoxFit.contain,
-                  excludeFromSemantics: true,
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ],
     );
   }
+}
+
+List<String> _commentParagraphs(String comment) {
+  final paragraphs = <String>[];
+  final buffer = StringBuffer();
+  for (final character in comment.trim().characters) {
+    buffer.write(character);
+    if ('。！？'.contains(character) && paragraphs.length < 3) {
+      final sentence = buffer.toString().trim();
+      if (sentence.isNotEmpty) paragraphs.add(sentence);
+      buffer.clear();
+    }
+  }
+  final remainder = buffer.toString().trim();
+  if (remainder.isNotEmpty) paragraphs.add(remainder);
+  return paragraphs.isEmpty ? [comment] : paragraphs;
 }
 
 class _CommentHeading extends StatelessWidget {
@@ -754,7 +812,7 @@ class _CommentHeading extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                'めたんからのひとこと',
+                'めたんのひとこと',
                 style: TextStyle(
                   color: Colors.white,
                   fontFamily: reportAccentFontFamily,
