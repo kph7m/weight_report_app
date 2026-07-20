@@ -450,6 +450,11 @@ void main() {
       _assetNameForSemanticLabel(tester, 'レポート応援キャラクター'),
       'assets/images/character_report.png',
     );
+    final tableBottom = tester.getBottomRight(find.byType(Table)).dy;
+    final characterTop = tester
+        .getTopLeft(find.bySemanticsLabel('レポート応援キャラクター'))
+        .dy;
+    expect(tableBottom - characterTop, inInclusiveRange(5, 15));
     expect(find.text('本日の体重'), findsOneWidget);
     expect(find.text('目標体重　'), findsOneWidget);
     expect(find.text('75.0 kg'), findsOneWidget);

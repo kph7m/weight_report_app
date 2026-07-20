@@ -230,10 +230,10 @@ class _ReportBody extends StatelessWidget {
                         child: _MetanCommentPanel(comment: comment),
                       ),
                       const Positioned(
-                        right: 5,
+                        right: -25,
                         bottom: 40,
-                        width: 500,
-                        height: 680,
+                        width: 580,
+                        height: 767,
                         child: _ReportCharacter(),
                       ),
                     ],
@@ -839,8 +839,8 @@ class _ReportCharacter extends StatelessWidget {
         Positioned(
           bottom: 2,
           child: Container(
-            width: 310,
-            height: 62,
+            width: 350,
+            height: 68,
             decoration: const BoxDecoration(
               color: Color(0x55F76B9F),
               borderRadius: BorderRadius.all(Radius.elliptical(999, 180)),
@@ -852,8 +852,8 @@ class _ReportCharacter extends StatelessWidget {
           top: 55,
           child: Image.asset(
             'assets/images/report/report_sparkle_gold.png',
-            width: 65,
-            height: 65,
+            width: 72,
+            height: 72,
             excludeFromSemantics: true,
           ),
         ),
@@ -862,14 +862,14 @@ class _ReportCharacter extends StatelessWidget {
           top: 35,
           child: Image.asset(
             'assets/images/report/report_sparkle_pink.png',
-            width: 64,
-            height: 64,
+            width: 70,
+            height: 70,
             excludeFromSemantics: true,
           ),
         ),
         Image.asset(
           'assets/images/character_report.png',
-          height: 665,
+          height: 767,
           fit: BoxFit.contain,
           semanticLabel: 'レポート応援キャラクター',
         ),
