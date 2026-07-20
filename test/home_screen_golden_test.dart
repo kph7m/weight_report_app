@@ -396,6 +396,8 @@ void main() {
     expect(find.byType(ReportScreen), findsOneWidget);
     expect(find.text('測定日：${_formatTestDate(today)}'), findsOneWidget);
     expect(find.text('日付'), findsOneWidget);
+    expect(find.text('7日平均'), findsOneWidget);
+    expect(find.textContaining('その日を含む過去7日間平均'), findsNothing);
     expect(find.textContaining('JST'), findsNothing);
   });
 
