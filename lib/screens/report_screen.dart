@@ -272,9 +272,8 @@ class _ReportBackdrop extends StatelessWidget {
       decoration: BoxDecoration(
         color: Color(0xFFFFF8FB),
         image: DecorationImage(
-          image: AssetImage('assets/images/report/report_background_tile.png'),
-          repeat: ImageRepeat.repeat,
-          opacity: 0.62,
+          image: AssetImage('assets/images/report/report_background.png'),
+          fit: BoxFit.cover,
         ),
       ),
     );

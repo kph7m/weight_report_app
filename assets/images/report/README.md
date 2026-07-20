@@ -12,7 +12,7 @@ Compose each family as a horizontal `Row`: fixed-width `left`, `Expanded` center
 
 ## Tiled assets
 
-- `report_background_tile.png`: repeat or cover behind the report.
+- `report_background.png`: fill the entire report background with `BoxFit.cover`.
 
 ## Free-position decorations
 
