@@ -6,6 +6,7 @@ import '../providers/ai_comment_providers.dart';
 import '../providers/weight_providers.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
+import 'settings_screen.dart';
 
 const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
@@ -32,6 +33,144 @@ class ReportScreen extends ConsumerWidget {
           error: (error, stackTrace) =>
               Center(child: Text('読み込みに失敗しました: $error')),
           loading: () => const Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      bottomNavigationBar: const _ReportFooter(),
+    );
+  }
+}
+
+class _ReportFooter extends StatelessWidget {
+  const _ReportFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 600;
+        return Container(
+          height: compact ? 84 : 116,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.96),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(compact ? 28 : 44),
+            ),
+            border: const Border(top: BorderSide(color: Color(0xFFFFE2EC))),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x22D54A7F),
+                blurRadius: 18,
+                offset: Offset(0, -5),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            top: false,
+            minimum: EdgeInsets.symmetric(horizontal: compact ? 8 : 34),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _FooterDestination(
+                    label: 'ホーム',
+                    icon: Icons.home_rounded,
+                    selected: true,
+                    compact: compact,
+                    onPressed: () {},
+                  ),
+                ),
+                Expanded(
+                  child: _FooterDestination(
+                    label: 'グラフ',
+                    icon: Icons.show_chart_rounded,
+                    compact: compact,
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('グラフ画面は準備中です')),
+                      );
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: _FooterDestination(
+                    label: '記録',
+                    icon: Icons.edit_note_rounded,
+                    compact: compact,
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const HomeScreen(forceInput: true),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: _FooterDestination(
+                    label: '設定',
+                    icon: Icons.settings_outlined,
+                    compact: compact,
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FooterDestination extends StatelessWidget {
+  const _FooterDestination({
+    required this.label,
+    required this.icon,
+    required this.compact,
+    required this.onPressed,
+    this.selected = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool compact;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? _reportPink : const Color(0xFF594B4E);
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: compact ? 6 : 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: compact ? 30 : 43),
+              SizedBox(height: compact ? 2 : 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontFamily: reportAccentFontFamily,
+                  fontSize: compact ? 12 : 19,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

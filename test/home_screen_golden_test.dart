@@ -440,6 +440,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(seconds: 1));
+    });
+    await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('レポート応援キャラクター'), findsOneWidget);
     expect(
@@ -452,6 +456,10 @@ void main() {
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.bySemanticsLabel('体重入力画面を開く'), findsOneWidget);
     expect(find.bySemanticsLabel('体重入力アイコン'), findsOneWidget);
+    expect(find.text('ホーム'), findsOneWidget);
+    expect(find.text('グラフ'), findsOneWidget);
+    expect(find.text('記録'), findsOneWidget);
+    expect(find.text('設定'), findsOneWidget);
     expect(find.text('日付'), findsOneWidget);
     expect(find.textContaining('JST'), findsNothing);
     expect(find.text('🌸 今日のひとこと♪'), findsNothing);
