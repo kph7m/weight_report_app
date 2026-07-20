@@ -13,6 +13,7 @@ Compose each family as a horizontal `Row`: fixed-width `left`, `Expanded` center
 ## Tiled assets
 
 - `report_background.png`: fill the entire report background with `BoxFit.cover`.
+- `report_background_clouds.jpg`: layer above the main background with a soft top fade, aligned to the bottom with `BoxFit.fitWidth`.
 
 ## Free-position decorations
 

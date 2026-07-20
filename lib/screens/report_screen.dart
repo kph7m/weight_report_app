@@ -20,30 +20,53 @@ class ReportScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(weightEntriesProvider);
     final generationState = ref.watch(aiCommentControllerProvider);
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFF8FB),
-        image: DecorationImage(
-          image: AssetImage('assets/images/report/report_background.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Scaffold(
-        extendBody: true,
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: entriesAsync.when(
-            data: (entries) => _ReportBody(
-              entries: entries,
-              generatedComment: generationState.comment,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            color: Color(0xFFFFF8FB),
+            image: DecorationImage(
+              image: AssetImage('assets/images/report/report_background.png'),
+              fit: BoxFit.cover,
             ),
-            error: (error, stackTrace) =>
-                Center(child: Text('読み込みに失敗しました: $error')),
-            loading: () => const Center(child: CircularProgressIndicator()),
           ),
         ),
-        bottomNavigationBar: const _ReportFooter(),
-      ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: ShaderMask(
+            blendMode: BlendMode.dstIn,
+            shaderCallback: (bounds) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Colors.black],
+              stops: [0, 0.32],
+            ).createShader(bounds),
+            child: Image.asset(
+              'assets/images/report/report_background_clouds.jpg',
+              width: double.infinity,
+              fit: BoxFit.fitWidth,
+              excludeFromSemantics: true,
+            ),
+          ),
+        ),
+        Scaffold(
+          extendBody: true,
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: entriesAsync.when(
+              data: (entries) => _ReportBody(
+                entries: entries,
+                generatedComment: generationState.comment,
+              ),
+              error: (error, stackTrace) =>
+                  Center(child: Text('読み込みに失敗しました: $error')),
+              loading: () => const Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          bottomNavigationBar: const _ReportFooter(),
+        ),
+      ],
     );
   }
 }
