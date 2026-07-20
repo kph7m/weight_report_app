@@ -23,3 +23,14 @@ Compose each family as a horizontal `Row`: fixed-width `left`, `Expanded` center
 - `report_heart.png`
 
 Place these decorations independently in a `Stack` so they can move or disappear at narrow breakpoints.
+
+## Comment panel assets
+
+The `めたんからのひとこと` panel is split into independently scalable pieces so the AI comment remains live Flutter text.
+
+- `report_comment_panel_frame.png`: transparent ornamental frame. Render it behind the panel with `centerSlice: Rect.fromLTWH(180, 180, 408, 450)` and `fit: BoxFit.fill` so the corners, bottom wave, and bow keep their shape.
+- `report_comment_heading_{left,center,right}.png`: three-slice heading ribbon. Keep the two caps fixed and stretch only the center below a Flutter-rendered heading.
+- `report_comment_divider.png`: dotted separator between comment paragraphs; stretch it horizontally.
+- `report_comment_ornament.png`: optional flower-and-heart end ornament for free positioning.
+
+A contact sheet for reviewing these assets is stored at `docs/specs/report-comment-assets-preview.png`.
