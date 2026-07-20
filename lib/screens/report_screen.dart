@@ -69,8 +69,8 @@ class _ReportFooter extends StatelessWidget {
               children: [
                 Expanded(
                   child: _FooterDestination(
-                    label: 'ホーム',
-                    icon: Icons.home_rounded,
+                    label: 'レポート',
+                    icon: Icons.assignment_rounded,
                     selected: true,
                     compact: compact,
                     onPressed: () {},

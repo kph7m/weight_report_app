@@ -460,7 +460,8 @@ void main() {
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.bySemanticsLabel('体重入力画面を開く'), findsNothing);
     expect(find.bySemanticsLabel('体重入力アイコン'), findsNothing);
-    expect(find.text('ホーム'), findsOneWidget);
+    expect(find.text('レポート'), findsOneWidget);
+    expect(find.text('ホーム'), findsNothing);
     expect(find.text('グラフ'), findsOneWidget);
     expect(find.text('記録'), findsOneWidget);
     expect(find.text('設定'), findsOneWidget);
