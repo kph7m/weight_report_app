@@ -356,7 +356,7 @@ class _SevenDayTable extends StatelessWidget {
             Text('日付'),
             Text('体重'),
             Text('前日比'),
-            Text('7日平均\n（その日を含む過去7日間平均）'),
+            Text('7日平均'),
           ], isHeader: true),
           ...rows.map((row) => _tableRow(row.cells)),
         ],
@@ -525,9 +525,10 @@ class _ViewerMessagePanel extends StatelessWidget {
       child: Text(
         aiComment,
         style: TextStyle(
-          fontSize: 32 * scale,
+          fontFamily: appFontFamily,
+          fontSize: 18 * scale,
           height: 1.65,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

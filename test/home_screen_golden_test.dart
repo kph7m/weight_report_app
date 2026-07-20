@@ -396,6 +396,8 @@ void main() {
     expect(find.byType(ReportScreen), findsOneWidget);
     expect(find.text('測定日：${_formatTestDate(today)}'), findsOneWidget);
     expect(find.text('日付'), findsOneWidget);
+    expect(find.text('7日平均'), findsOneWidget);
+    expect(find.textContaining('その日を含む過去7日間平均'), findsNothing);
     expect(find.textContaining('JST'), findsNothing);
   });
 
@@ -459,21 +461,21 @@ void main() {
           .widget<Text>(find.textContaining('前日から0.4kg減っていますわ'))
           .style
           ?.fontSize,
-      32,
+      18,
     );
     expect(
       tester
           .widget<Text>(find.textContaining('前日から0.4kg減っていますわ'))
           .style
           ?.fontWeight,
-      FontWeight.w400,
+      FontWeight.w600,
     );
     expect(
       tester
           .widget<Text>(find.textContaining('前日から0.4kg減っていますわ'))
           .style
           ?.fontFamily,
-      isNull,
+      appFontFamily,
     );
     expect(find.textContaining('毎日の積み重ねが'), findsNothing);
     expect(find.textContaining('目標まであと'), findsOneWidget);
