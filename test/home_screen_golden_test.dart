@@ -68,6 +68,13 @@ String? _assetNameForSemanticLabel(WidgetTester tester, String semanticLabel) {
   return null;
 }
 
+Finder _findAssetImage(String assetName) => find.byWidgetPredicate(
+  (widget) =>
+      widget is Image &&
+      widget.image is AssetImage &&
+      (widget.image as AssetImage).assetName == assetName,
+);
+
 class _FakeWeightRepository implements WeightRepository {
   _FakeWeightRepository({this.saveError, this.apiKey});
 
@@ -382,7 +389,7 @@ void main() {
   testWidgets('shows report screen when today entry already exists', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(922, 1706));
+    await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -399,6 +406,8 @@ void main() {
     expect(find.text('7日平均'), findsOneWidget);
     expect(find.textContaining('その日を含む過去7日間平均'), findsNothing);
     expect(find.textContaining('JST'), findsNothing);
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('renders report screen with report character', (tester) async {
@@ -440,14 +449,19 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(seconds: 1));
+    });
+    await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('レポート応援キャラクター'), findsOneWidget);
     expect(
       _assetNameForSemanticLabel(tester, 'レポート応援キャラクター'),
       'assets/images/character_report.png',
     );
-    expect(find.text('本日の\n体重'), findsOneWidget);
-    expect(find.text('目標体重　75.0kg　目標まであと　11.3kg　ですわ！'), findsOneWidget);
+    expect(find.text('本日の体重'), findsOneWidget);
+    expect(find.text('目標体重　75.0 kg'), findsOneWidget);
+    expect(find.text('目標まであと　11.3 kg ですわ！'), findsOneWidget);
     expect(find.textContaining('今日も記録えらいですわっ'), findsNothing);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
     expect(find.bySemanticsLabel('体重入力画面を開く'), findsOneWidget);
@@ -481,7 +495,19 @@ void main() {
     expect(find.textContaining('目標まであと'), findsOneWidget);
     expect(find.text('目標体重'), findsNothing);
     expect(find.textContaining('※7日平均は'), findsNothing);
-    expect(find.byType(SingleChildScrollView), findsNothing);
+    expect(
+      _findAssetImage('assets/images/report/report_today_title_center.png'),
+      findsOneWidget,
+    );
+    expect(
+      _findAssetImage('assets/images/report/report_history_ribbon_center.png'),
+      findsOneWidget,
+    );
+    expect(
+      _findAssetImage('assets/images/report/report_comment_title_center.png'),
+      findsOneWidget,
+    );
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
     await expectLater(
       find.byType(ReportScreen),
       matchesGoldenFile('../docs/screenshots/report-screen.png'),
