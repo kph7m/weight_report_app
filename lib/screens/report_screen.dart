@@ -12,7 +12,6 @@ const _reportPink = Color(0xFFFF3B86);
 const _deepPink = Color(0xFFF50057);
 const _blue = Color(0xFF2563EB);
 const _ink = Color(0xFF171717);
-const _weightInputIconAsset = 'assets/images/weight_input_icon.png';
 
 class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
@@ -354,8 +353,6 @@ class _TodayWeightCard extends StatelessWidget {
                 height: 62,
                 excludeFromSemantics: true,
               ),
-              const SizedBox(width: 16),
-              const _WeightInputShortcut(),
             ],
           ),
           Transform.translate(
@@ -433,34 +430,6 @@ class _TodayWeightCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _WeightInputShortcut extends StatelessWidget {
-  const _WeightInputShortcut();
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: '体重入力画面を開く',
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(
-              builder: (_) => const HomeScreen(forceInput: true),
-            ),
-          );
-        },
-        child: Image.asset(
-          _weightInputIconAsset,
-          width: 112,
-          height: 112,
-          semanticLabel: '体重入力アイコン',
-        ),
       ),
     );
   }

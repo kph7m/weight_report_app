@@ -455,8 +455,8 @@ void main() {
     expect(find.text('目標まであと　11.3 kg　ですわ！'), findsOneWidget);
     expect(find.textContaining('今日も記録えらいですわっ'), findsNothing);
     expect(find.text('直近７日間の体重記録'), findsOneWidget);
-    expect(find.bySemanticsLabel('体重入力画面を開く'), findsOneWidget);
-    expect(find.bySemanticsLabel('体重入力アイコン'), findsOneWidget);
+    expect(find.bySemanticsLabel('体重入力画面を開く'), findsNothing);
+    expect(find.bySemanticsLabel('体重入力アイコン'), findsNothing);
     expect(find.text('ホーム'), findsOneWidget);
     expect(find.text('グラフ'), findsOneWidget);
     expect(find.text('記録'), findsOneWidget);
@@ -498,7 +498,7 @@ void main() {
     );
   });
 
-  testWidgets('weight input icon opens forced input screen from report', (
+  testWidgets('record footer opens forced input screen from report', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(922, 1706));
@@ -529,7 +529,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.bySemanticsLabel('体重入力画面を開く'));
+    await tester.tap(find.text('記録'));
     await tester.pumpAndSettle();
 
     expect(find.byType(HomeScreen), findsOneWidget);
