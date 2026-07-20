@@ -20,20 +20,30 @@ class ReportScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(weightEntriesProvider);
     final generationState = ref.watch(aiCommentControllerProvider);
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFD),
-      body: SafeArea(
-        child: entriesAsync.when(
-          data: (entries) => _ReportBody(
-            entries: entries,
-            generatedComment: generationState.comment,
-          ),
-          error: (error, stackTrace) =>
-              Center(child: Text('読み込みに失敗しました: $error')),
-          loading: () => const Center(child: CircularProgressIndicator()),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Color(0xFFFFF8FB),
+        image: DecorationImage(
+          image: AssetImage('assets/images/report/report_background.png'),
+          fit: BoxFit.cover,
         ),
       ),
-      bottomNavigationBar: const _ReportFooter(),
+      child: Scaffold(
+        extendBody: true,
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: entriesAsync.when(
+            data: (entries) => _ReportBody(
+              entries: entries,
+              generatedComment: generationState.comment,
+            ),
+            error: (error, stackTrace) =>
+                Center(child: Text('読み込みに失敗しました: $error')),
+            loading: () => const Center(child: CircularProgressIndicator()),
+          ),
+        ),
+        bottomNavigationBar: const _ReportFooter(),
+      ),
     );
   }
 }
@@ -49,7 +59,7 @@ class _ReportFooter extends StatelessWidget {
         return Container(
           height: compact ? 84 : 116,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.96),
+            color: Colors.white.withValues(alpha: 0.9),
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(compact ? 28 : 44),
             ),
@@ -191,53 +201,49 @@ class _ReportBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const designSize = Size(922, 1570);
-        return ColoredBox(
-          color: const Color(0xFFFFF8FB),
-          child: Align(
+        return Align(
+          alignment: Alignment.topCenter,
+          child: FittedBox(
+            fit: BoxFit.contain,
             alignment: Alignment.topCenter,
-            child: FittedBox(
-              fit: BoxFit.contain,
-              alignment: Alignment.topCenter,
-              child: SizedBox(
-                width: designSize.width,
-                height: designSize.height,
-                child: DefaultTextStyle.merge(
-                  style: const TextStyle(
-                    color: _ink,
-                    fontFamily: appFontFamily,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  child: Stack(
-                    children: [
-                      const Positioned.fill(child: _ReportBackdrop()),
-                      Positioned(
-                        left: 28,
-                        right: 28,
-                        top: 18,
-                        child: _TodayWeightCard(latest: latest),
-                      ),
-                      Positioned(
-                        left: 28,
-                        right: 28,
-                        top: 286,
-                        child: _HistoryCard(rows: rows),
-                      ),
-                      Positioned(
-                        left: 28,
-                        top: 814,
-                        width: 450,
-                        height: 565,
-                        child: _MetanCommentPanel(comment: comment),
-                      ),
-                      const Positioned(
-                        right: -25,
-                        bottom: 40,
-                        width: 580,
-                        height: 767,
-                        child: _ReportCharacter(),
-                      ),
-                    ],
-                  ),
+            child: SizedBox(
+              width: designSize.width,
+              height: designSize.height,
+              child: DefaultTextStyle.merge(
+                style: const TextStyle(
+                  color: _ink,
+                  fontFamily: appFontFamily,
+                  fontWeight: FontWeight.w700,
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 28,
+                      right: 28,
+                      top: 18,
+                      child: _TodayWeightCard(latest: latest),
+                    ),
+                    Positioned(
+                      left: 28,
+                      right: 28,
+                      top: 286,
+                      child: _HistoryCard(rows: rows),
+                    ),
+                    Positioned(
+                      left: 28,
+                      top: 814,
+                      width: 450,
+                      height: 565,
+                      child: _MetanCommentPanel(comment: comment),
+                    ),
+                    const Positioned(
+                      right: -25,
+                      bottom: 40,
+                      width: 580,
+                      height: 767,
+                      child: _ReportCharacter(),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -260,23 +266,6 @@ class _ReportBody extends StatelessWidget {
         average: rollingSevenDayAverage(sorted, index),
       );
     });
-  }
-}
-
-class _ReportBackdrop extends StatelessWidget {
-  const _ReportBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        color: Color(0xFFFFF8FB),
-        image: DecorationImage(
-          image: AssetImage('assets/images/report/report_background.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
   }
 }
 
